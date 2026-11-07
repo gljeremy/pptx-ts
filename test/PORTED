@@ -1,0 +1,9 @@
+tests/opc/test_packuri.py
+tests/opc/test_oxml.py
+tests/opc/test_serialized.py
+tests/opc/test_package.py
+tests/oxml/test_xmlchemy.py
+tests/oxml/test_simpletypes.py
+tests/oxml/test_ns.py
+tests/test_util.py
+tests/test_shared.py

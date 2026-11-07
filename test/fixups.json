@@ -1,0 +1,20 @@
+{
+  "_comment": "Edits applied to machine-translated tests (scripts/py2ts_tests.py). Each entry is [find, replace, reason], or [\"@skip\", test name, reason] for a test of python-only behavior. Every skip is also listed in PARITY.md.",
+  "test/opc/package.test.ts": [
+    ["import { PresentationPart } from \"../../src/parts/presentation.js\";", "import { XmlPart as PresentationPart } from \"../../src/opc/package.js\";", "pptx.parts.presentation arrives in stage 2; only its spec is used here"],
+    ["$assertEqual($get(rels_by_reltype, RT.CHART), []);", "$assertEqual($dictget(rels_by_reltype, RT.CHART, []), []);", "python returns a defaultdict(list); the port returns a plain mapping and callers default to []"]
+  ],
+  "test/util.test.ts": [
+    ["        $assert($isinstance(length, Length));\n", "", "lengths are plain numbers (EMU) in pptx-ts, not Length instances"]
+  ],
+  "test/oxml/xmlchemy.test.ts": [
+    ["@skip", "it_has_the_MetaOxmlElement_metaclass", "python metaclass; TS classes call defineChildren() instead"],
+    ["@skip", "it_adds_a_docstring_for_the_property", "python __doc__ strings"]
+  ],
+  "test/opc/serialized.test.ts": [
+    ["@skip", "it_has_an__enter__method_for_context_management", "python context-manager protocol; the TS writer is closed by PackageWriter._write()"],
+    ["@skip", "and_it_closes_the_zip_archive_on_context__exit__", "python context-manager protocol"],
+    ["@skip", "it_can_write_a_blob", "exercises python's zipfile.ZipFile; covered by test/opc/zip_writer.test.ts"],
+    ["@skip", "it_provides_access_to_the_open_zip_file_to_help", "python's zipfile.ZipFile; the TS writer uses fflate"]
+  ]
+}

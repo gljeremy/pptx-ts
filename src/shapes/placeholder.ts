@@ -27,8 +27,15 @@ type Ctor<T = object> = abstract new (...args: any[]) => T;
  * This behavior is distinctive to placeholders. `_basePlaceholder` must be overridden by all
  * subclasses to provide lookup of the appropriate base placeholder to inherit from.
  */
+const INHERITS_DIMENSIONS = Symbol("pptx.InheritsDimensions");
+
 export function _InheritsDimensions<TBase extends Ctor<{ _element: any }>>(Base: TBase) {
   abstract class InheritsDimensions extends Base {
+    /** marks instances for `x instanceof _InheritsDimensions` (python isinstance on the mixin) */
+    get [INHERITS_DIMENSIONS](): true {
+      return true;
+    }
+
     /**
      * The effective height of this placeholder shape; its directly-applied height if it has
      * one, otherwise the height of its parent layout placeholder.
@@ -106,6 +113,9 @@ export function _InheritsDimensions<TBase extends Ctor<{ _element: any }>>(Base:
   }
   return InheritsDimensions;
 }
+Object.defineProperty(_InheritsDimensions, Symbol.hasInstance, {
+  value: (v: unknown) => typeof v === "object" && v !== null && (v as any)[INHERITS_DIMENSIONS] === true,
+});
 
 /**
  * Base class for placeholders on slides.

@@ -51,7 +51,7 @@ DISPATCH = {
 }
 # dispatch only when the receiver is not obviously a src object
 DISPATCH_ALWAYS = {"split", "strip", "lstrip", "rstrip", "lower", "upper", "startswith", "endswith", "encode",
-                   "decode", "splitlines", "isdigit", "setdefault"}
+                   "decode", "splitlines", "isdigit", "setdefault", "extend"}
 
 
 JS_RESERVED = {
@@ -797,7 +797,13 @@ class T:
         for b in s.bases:
             if isinstance(b, ast.Name) and b.id in self.test_classes:
                 base = b.id
-        out = [f"const {s.name}: any = {{"]
+        # a def without `self` used while the class body runs (e.g. `@pytest.fixture(params=_cases())`)
+        # is a plain function: emit it at module level, before the class object
+        pre = []
+        for st in s.body:
+            if isinstance(st, ast.FunctionDef) and not st.args.args and not st.decorator_list:
+                pre.append(f"const {st.name} = {self.func_expr(st, 0)};")
+        out = pre + [f"const {s.name}: any = {{"]
         if base:
             out.append(f"  base: {base},")
         out.append("  fixtures: {")
@@ -910,8 +916,7 @@ def assigned_names(stmts):
     def visit(node):
         if isinstance(node, (ast.FunctionDef, ast.Lambda, ast.ClassDef, ast.ListComp, ast.DictComp, ast.SetComp, ast.GeneratorExp)):
             # nested `def`s are emitted as `const name = ...` (see s_FunctionDef)
-            if isinstance(node, ast.ClassDef):
-                names.add(node.name)
+            # nested classes are emitted as `class Name {...}` declarations
             return
         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
             names.add(node.id)
@@ -943,9 +948,15 @@ def import_lines(t, rel_src, rel_test):
                 path += "/index"
             target = f"{rel_src}/{path}.js"
         elif mod.startswith(".") or mod.startswith("tests"):
+            level = len(mod) - len(mod.lstrip("."))
             m = mod.lstrip(".")
             if m.startswith("tests."):
                 m = m[len("tests."):]
+            elif level:
+                # relative to the test module's package (tests/<pkg>/...), level 1 = same package
+                pkg = getattr(t, "pkg_parts", [])
+                base = pkg[: len(pkg) - (level - 1)] if level > 1 else pkg
+                m = ".".join(base + ([m] if m else []))
             if m.startswith("unitutil.mock") or m == "unitutil.mock":
                 continue  # provided by pyshim
             if m in ("unitutil", "unitutil.__init__"):
@@ -1047,6 +1058,8 @@ def main():
         f'import {{ InvalidXmlError, PackageNotFoundError, PythonPptxError }} from "{rel_src}/exc.js";',
         f'import {{ defineChildren }} from "{rel_src}/oxml/xmlchemy.js";',
     ]
+    rel_py = src.replace("\\", "/").split("/tests/", 1)[-1]
+    t.pkg_parts = rel_py.split("/")[:-1]
     t.initializer_mocked = set(re.findall(r"initializer_mock\(\s*request\s*,\s*([A-Za-z_]\w*)", open(src, encoding="utf-8").read()))
     header += import_lines(t, rel_src, rel_test)
     header.append("void $py;")

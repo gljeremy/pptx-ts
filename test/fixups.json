@@ -57,14 +57,79 @@
   ],
   "test/parts/slide.test.ts": [
     [
-      "import { ChartData as ChartData$imported } from \"../../src/chart/data.js\";",
-      "// pptx.chart.data is ported in stage 5; the test only needs a class to mock\nclass ChartData { xmlBytes(_chartType: any): Uint8Array { return new Uint8Array(); } get xlsxBlob(): Uint8Array { return new Uint8Array(); } }",
-      "pptx.chart.data arrives in stage 5 (gljeremy/pptx-ts#5); ChartData is only instance-mocked here"
+      "\"../../src/chart/data.js\"",
+      "\"../stage5_standins.js\"",
+      "pptx.chart arrives in stage 5 (gljeremy/pptx-ts#5); the test only mocks this class (see test/stage5_standins.ts)"
+    ]
+  ],
+  "test/action.test.ts": [
+    [
+      "$call(call, url, RT.HYPERLINK, $kw({is_external: true}))",
+      "$call(call, url, RT.HYPERLINK, true)",
+      "TS has no keyword arguments: Hyperlink passes isExternal positionally, and this un-spec'd mock compares calls literally"
+    ]
+  ],
+  "test/shapes/placeholder.test.ts": [
+    [
+      "\"../../src/chart/data.js\"",
+      "\"../stage5_standins.js\"",
+      "pptx.chart arrives in stage 5 (gljeremy/pptx-ts#5); the test only mocks this class (see test/stage5_standins.ts)"
     ],
     [
-      "const ChartData = ChartData$imported;\n",
+      "layout_.placeholders.get.assertCalledOnceWith($kw({idx: idx}));",
+      "layout_.placeholders.get.assertCalledOnceWith(idx);",
+      "TS has no keyword arguments; this un-spec'd mock compares the call literally"
+    ],
+    [
+      "notes_master_.placeholders.get.assertCalledOnceWith($kw({ph_type: ph_type}));",
+      "notes_master_.placeholders.get.assertCalledOnceWith(ph_type);",
+      "as above"
+    ]
+  ],
+  "test/shapes/shapetree.test.ts": [
+    [
+      "\"../../src/chart/data.js\"",
+      "\"../stage5_standins.js\"",
+      "pptx.chart arrives in stage 5 (gljeremy/pptx-ts#5); the test only mocks this class (see test/stage5_standins.ts)"
+    ],
+    [
+      "classMock(request, \"pptx.shapes.shapetree.io.BytesIO\");",
+      "classMock(request, \"pptx.fileio.BytesIO\");",
+      "the TS module imports BytesIO from pptx-ts's fileio rather than using io.BytesIO; patch it there"
+    ],
+    [
+      "$call(classMock, request, \"pptx.shapes.shapetree.io.BytesIO\", $kw({return_value: stream_}))",
+      "$call(classMock, request, \"pptx.fileio.BytesIO\", $kw({return_value: stream_}))",
+      "as above"
+    ],
+    [
+      "        $assert($endswith(element_creator._iconImageFile, expected_value));",
+      "        // the bundled icons are opened from memory (BytesIO of the template bytes), not from a path\n        const $icon = element_creator._iconImageFile;\n        $assert(typeof $icon === \"string\" ? $endswith($icon, expected_value) : $eq($icon.getvalue(), templateBytes(expected_value)));",
+      "pptx-ts bundles the OLE icons and opens them from memory (no template files at runtime); a user-supplied icon path still passes through"
+    ],
+    [
+      "import * as $py from \"../pyshim.js\";",
+      "import * as $py from \"../pyshim.js\";\nimport { $eq } from \"../pyshim.js\";\nimport { templateBytes } from \"../../src/templates/index.js\";",
+      "helpers for the icon fixup above"
+    ]
+  ],
+  "test/shapes/graphfrm.test.ts": [
+    [
+      "\"../../src/chart/chart.js\"",
+      "\"../stage5_standins.js\"",
+      "pptx.chart arrives in stage 5 (gljeremy/pptx-ts#5); the test only mocks this class (see test/stage5_standins.ts)"
+    ]
+  ],
+  "test/shapes/autoshape.test.ts": [
+    [
+      "        $raises(TypeError, () => {\n          $get(adjustments, 0.0);\n        });\n",
       "",
-      "see the ChartData stand-in above"
+      "JS has one number type, so 0.0 is the integer index 0; non-number indexes still raise TypeError"
+    ],
+    [
+      "        $raises(TypeError, () => {\n          $set(adjustments, 0.0, 1.0);\n        });\n",
+      "",
+      "as above (0.0 is the integer index 0 in JS)"
     ]
   ]
 }

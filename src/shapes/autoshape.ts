@@ -1,5 +1,6 @@
 // Autoshape-related objects such as Shape and Adjustment. (`pptx.shapes.autoshape`)
-import { ValueError, KeyError, NotImplementedError } from "../errors.js";
+import { IndexError, KeyError, NotImplementedError, ValueError } from "../errors.js";
+import { PY_GETITEM } from "../oxml/xml.js";
 import { lazy, pyInt, pyRepr, xmlEscape } from "../util.js";
 import { FillFormat } from "../dml/fill.js";
 import { LineFormat } from "../dml/line.js";
@@ -103,7 +104,19 @@ export class AdjustmentCollection {
 
   /** Provides indexed access, (e.g. 'adjustments[9]'). */
   at(idx: number): number {
-    return this._adjustments_[idx].effectiveValue;
+    return this._adjustment(idx).effectiveValue;
+  }
+
+  [PY_GETITEM](idx: number): number {
+    return this.at(idx);
+  }
+
+  /** The Adjustment at `idx` (python list indexing: negative counts from the end). */
+  _adjustment(idx: number): Adjustment {
+    if (typeof idx !== "number" || !Number.isInteger(idx)) throw new TypeError(`list indices must be integers or slices, not ${typeof idx}`);
+    const adj = this._adjustments_.at(idx);
+    if (adj === undefined) throw new IndexError("list index out of range");
+    return adj;
   }
 
   /**
@@ -112,7 +125,7 @@ export class AdjustmentCollection {
    * Causes all adjustment values in collection to be written to the XML.
    */
   set(idx: number, value: number): void {
-    this._adjustments_[idx].effectiveValue = value;
+    this._adjustment(idx).effectiveValue = value;
     this._rewriteGuides();
   }
 
@@ -143,22 +156,16 @@ export class AdjustmentCollection {
    * `guides` is a list of `a:gd` elements. Guides with a name that does not match an adjustment
    * object are skipped.
    */
-  static _updateAdjustmentsWithActuals(adjustments: Adjustment[], guides: CT_GeomGuide[]) {
-    let gd;
-    const adjustmentsByName = Object.fromEntries([...adjustments].map((adj) => [adj.name, adj]));
+  static _updateAdjustmentsWithActuals(adjustments: Adjustment[], guides: CT_GeomGuide[]): void {
+    const adjustmentsByName = new Map(adjustments.map((adj) => [adj.name, adj]));
     for (const gd of guides) {
       const name = gd.name;
       const actual = pyInt(gd.fmla.slice(4));
-      let adjustment;
-      try {
-        adjustment = adjustmentsByName[name];
-      } catch (e) {
-        if (!(e instanceof KeyError)) throw e;
-        continue;
-      }
+      // guides with a name that does not match an adjustment are skipped
+      const adjustment = adjustmentsByName.get(name);
+      if (adjustment === undefined) continue;
       adjustment.actual = actual;
     }
-    return;
   }
 
   /** Sequence of |Adjustment| objects contained in collection. */

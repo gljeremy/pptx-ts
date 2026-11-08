@@ -17,6 +17,9 @@ export class BaseBuilder {
   _xmlattrs: string[] = [];
   _xmlattrMethodMap: Record<string, string> = {};
   _childBldrs: BaseBuilder[] = [];
+  /** per-instance tag / namespace prefixes (python builders assign `self.__tag__` in `__init__`) */
+  _tag: string | null = null;
+  _nspfxs: string[] | null = null;
 
   constructor() {
     for (const attrName of this.__attrs__) {
@@ -38,10 +41,10 @@ export class BaseBuilder {
   }
 
   get __tag__(): string {
-    return (this.constructor as typeof BaseBuilder).__tag__;
+    return this._tag ?? (this.constructor as typeof BaseBuilder).__tag__;
   }
   get __nspfxs__(): string[] {
-    return (this.constructor as typeof BaseBuilder).__nspfxs__;
+    return this._nspfxs ?? (this.constructor as typeof BaseBuilder).__nspfxs__;
   }
   get __attrs__(): string[] {
     return (this.constructor as typeof BaseBuilder).__attrs__;

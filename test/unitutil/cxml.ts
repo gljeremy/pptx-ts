@@ -145,10 +145,22 @@ class CxelParser {
     return el;
   }
 
+  /** skip whitespace (pyparsing skips it between tokens, e.g. after the commas in "(a, b)") */
+  ws(): void {
+    while (this.i < this.s.length && /\s/.test(this.s[this.i])) this.i++;
+  }
+
   childNodeList(): Element[] {
+    this.ws();
     if (this.eat("(")) {
+      this.ws();
       const out = [this.node()];
-      while (this.eat(",")) out.push(this.node());
+      this.ws();
+      while (this.eat(",")) {
+        this.ws();
+        out.push(this.node());
+        this.ws();
+      }
       if (!this.eat(")")) this.fail("')'");
       return out;
     }

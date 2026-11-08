@@ -1,8 +1,7 @@
 // lxml custom element class for CT_GraphicalObjectFrame XML element. (`pptx.oxml.shapes.graphfrm`)
 import { defineChildren } from "../xmlchemy.js";
 import { parseXml } from "../parser.js";
-// stage 5 ports `pptx.oxml.chart`; until then the chart element is untyped
-type CT_Chart = any;
+import { CT_Chart } from "../chart/chart.js";
 import { nsdecls } from "../ns.js";
 import { BaseShapeElement } from "./shared.js";
 import { XsdBoolean, XsdString } from "../simpletypes.js";
@@ -195,8 +194,7 @@ export class CT_GraphicalObjectFrame extends BaseShapeElement {
     const graphicFrame = CT_GraphicalObjectFrame.newGraphicFrame(id_, name, x, y, cx, cy);
     const graphicData = graphicFrame.graphic.graphicData;
     graphicData.uri = GRAPHIC_DATA_URI_CHART;
-    // CT_Chart.newChart(rId); inlined so this module doesn't load the chart element classes
-    graphicData.append(parseXml(`<c:chart ${nsdecls("c")} ${nsdecls("r")} r:id="${rId}"/>`));
+    graphicData.append(CT_Chart.newChart(rId));
     return graphicFrame;
   }
 

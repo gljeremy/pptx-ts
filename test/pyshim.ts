@@ -12,6 +12,7 @@ import { BytesIO } from "../src/fileio.js";
 import * as mockMod from "./mock.js";
 import { ANY, _Call, camel, CallList, isMock, KW, setModules, setPyEq, setShow, signatureOf, type FixtureRequest } from "./mock.js";
 
+import * as utilMod from "../src/util.js";
 export * from "./mock.js";
 export { BytesIO };
 
@@ -389,6 +390,8 @@ export function $id(o: any): number {
   return ids.get(o)!;
 }
 
+const LENGTH_TYPES = new Set<any>([utilMod.Length, utilMod.Emu, utilMod.Inches, utilMod.Pt, utilMod.Cm, utilMod.Mm, utilMod.Centipoints]);
+
 /** isinstance; str/int/float/bool/list/tuple/dict/bytes map onto JS types */
 export function $isinstance(v: any, cls: any): boolean {
   if (Array.isArray(cls)) return cls.some((c) => $isinstance(v, c));
@@ -414,6 +417,8 @@ export function $isinstance(v: any, cls: any): boolean {
     case "bytes":
       return v instanceof Uint8Array;
   }
+  // lengths are plain integer EMU numbers in pptx-ts (python: Length, an int subclass)
+  if (LENGTH_TYPES.has(cls)) return v instanceof utilMod.Length || (typeof v === "number" && Number.isInteger(v));
   if (typeof cls !== "function") return false;
   try {
     return v instanceof cls;

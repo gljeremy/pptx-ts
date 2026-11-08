@@ -7,8 +7,7 @@ import { $append, $assert, $assertEqual, $b, $call, $is, $isinstance, $kw, $list
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-// pptx.chart.data is ported in stage 5; the test only needs a class to mock
-class ChartData { xmlBytes(_chartType: any): Uint8Array { return new Uint8Array(); } get xlsxBlob(): Uint8Array { return new Uint8Array(); } }
+import { ChartData as ChartData$imported } from "../stage5_standins.js";
 import { XL_CHART_TYPE as XCT$imported } from "../../src/enum/chart.js";
 import { PROG_ID as PROG_ID$imported } from "../../src/enum/shapes.js";
 import { Video as Video$imported } from "../../src/media.js";
@@ -28,6 +27,7 @@ import { NotesMaster as NotesMaster$imported, NotesSlide as NotesSlide$imported,
 import { element } from "../unitutil/cxml.js";
 import { absjoin, testFileDir } from "../unitutil/file.js";
 // python binds imported names at import time; patches made later don't change them
+const ChartData = ChartData$imported;
 const XCT = XCT$imported;
 const PROG_ID = PROG_ID$imported;
 const Video = Video$imported;

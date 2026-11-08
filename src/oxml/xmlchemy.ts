@@ -37,7 +37,8 @@ export function serializeForReading(element: XmlElement): XmlString {
   return new XmlString(tostring(element, { prettyPrint: true }));
 }
 
-const XML_ELM_LINE = /^( *<\/?[\w:]+)(.*?)(\/?>)([^<]*<\/[\w:]+>)?$/;
+// anchored at the start only, like python's `re.match`
+const XML_ELM_LINE = /^( *<\/?[\w:]+)(.*?)(\/?>)([^<]*<\/[\w:]+>)?/;
 
 /** A str whose equality comparison ignores attribute order, line by line; useful for tests. */
 export class XmlString extends String {

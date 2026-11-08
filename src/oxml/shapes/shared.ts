@@ -597,3 +597,6 @@ export class CT_Transform2D extends BaseOxmlElement {
     return off;
   }
 }
+
+// python-pptx code and tests import these from here
+export { ST_Direction, ST_PlaceholderSize };

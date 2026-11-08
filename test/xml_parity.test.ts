@@ -16,7 +16,7 @@ const golden = JSON.parse(
 it(`matches lxml on ${golden.length} XML parts`, () => {
   const bad: string[] = [];
   for (const m of golden) {
-    const root = parseXml(m.raw);
+    const root = parseXml(new TextEncoder().encode(m.raw)); // lxml parsed the part bytes
     const first = root._children.length && root._children[0] instanceof XmlElement ? root._children[0] : root;
     const got = {
       part: tostring(root, { xmlDeclaration: true, encoding: "UTF-8", standalone: true }),

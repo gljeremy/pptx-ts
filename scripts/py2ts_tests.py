@@ -175,7 +175,7 @@ class T:
         i = n.id
         if self.is_local(i):
             return ident(i)
-        if self.module_aliases.get(i) in ("hashlib", "zipfile", "itertools", "collections", "base64"):
+        if self.module_aliases.get(i) in ("hashlib", "zipfile", "itertools", "collections", "base64", "pptx", "datetime"):
             return "$" + self.module_aliases[i]
         if i in self.camel_names:
             return camel(i)
@@ -198,9 +198,9 @@ class T:
             if mod == "sys" and n.attr == "maxsize":
                 return "Number.MAX_SAFE_INTEGER"
             if mod == "os" and n.attr == "path":
-                return "path"
+                return "$path"
         if isinstance(base, ast.Attribute) and isinstance(base.value, ast.Name) and self.module_aliases.get(base.value.id) == "os":
-            return f"path.{n.attr}"
+            return f"$path.{n.attr}"
         b = self.expr(base)
         if n.attr == "__name__":
             return f"{b}.name"
@@ -442,7 +442,7 @@ class T:
                 return f"$list({self.expr(args[0])}).join({obj})"
             if meth == "format" and isinstance(f.value, ast.Constant):
                 return f"$pyformat({obj}, {self.kw_obj(kws) if kws else '[' + ', '.join(self.expr(a) for a in args) + ']'})"
-            if meth in DISPATCH and (meth in DISPATCH_ALWAYS or not self.src_receiver(f.value)):
+            if meth in DISPATCH and obj != "$path" and (meth in DISPATCH_ALWAYS or not self.src_receiver(f.value)):
                 return f"{DISPATCH[meth]}({obj}" + "".join(", " + p for p in ([self.expr(a) for a in args] + ([self.kw_obj(kws)] if kws else []))) + ")"
             m = attr_name(meth)
             if meth == "assert_has_calls" or meth.startswith("assert_"):
@@ -533,15 +533,24 @@ class T:
             return [p + f"{decl}{ident(t.id)} = {val};"]
         if isinstance(t, (ast.Tuple, ast.List)):
             names = target_names(t)
-            fresh = all(self.declare(nm) for nm in names)
+            all_names = all(isinstance(e, ast.Name) for e in t.elts)
+            fresh = all_names and all([self.declare(nm) for nm in names])
+            if not all_names:
+                for nm in names:
+                    self.declare(nm)
             return [p + f"{'let ' if fresh else ''}{self.target(t)} = $list({val});"]
         return [p + f"{self.expr(t)} = {val};"]
 
     def s_Assign(self, s, ind):
         val = self.expr(s.value)
-        out = []
+        if len(s.targets) == 1:
+            return self.assign_to(s.targets[0], val, ind)
+        # `a = b = expr`: evaluate expr once, then assign it to each target (python order)
+        self.tmp_count = getattr(self, "tmp_count", 0) + 1
+        tmp = f"$t{self.tmp_count}"
+        out = ["  " * ind + f"const {tmp} = {val};"]
         for t in s.targets:
-            out += self.assign_to(t, val, ind)
+            out += self.assign_to(t, tmp, ind)
         return out
 
     def s_AnnAssign(self, s, ind):
@@ -900,7 +909,8 @@ def assigned_names(stmts):
 
     def visit(node):
         if isinstance(node, (ast.FunctionDef, ast.Lambda, ast.ClassDef, ast.ListComp, ast.DictComp, ast.SetComp, ast.GeneratorExp)):
-            if isinstance(node, (ast.FunctionDef, ast.ClassDef)):
+            # nested `def`s are emitted as `const name = ...` (see s_FunctionDef)
+            if isinstance(node, ast.ClassDef):
                 names.add(node.name)
             return
         if isinstance(node, ast.Name) and isinstance(node.ctx, ast.Store):
@@ -947,8 +957,27 @@ def import_lines(t, rel_src, rel_test):
         alias = camel(local) if local in t.camel_names else local
         by_mod.setdefault(target, []).append(name if name == alias else f"{name} as {alias}")
     lines = []
+    snapshots = []
     for target, names in sorted(by_mod.items()):
-        lines.append(f"import {{ {', '.join(sorted(set(names)))} }} from \"{target}\";")
+        names = sorted(set(names))
+        if target.startswith(rel_src + "/"):
+            specs = []
+            for nm in names:
+                orig, _, alias = nm.partition(" as ")
+                alias = alias or orig
+                # initializer_mock replaces the class in its module bindings (JS can't patch a
+                # constructor in place), so tests that use it need the live binding
+                if alias in getattr(t, "initializer_mocked", set()):
+                    specs.append(nm)
+                    continue
+                specs.append(f"{orig} as {alias}$imported")
+                snapshots.append(f"const {alias} = {alias}$imported;")
+            lines.append(f"import {{ {', '.join(specs)} }} from \"{target}\";")
+        else:
+            lines.append(f"import {{ {', '.join(names)} }} from \"{target}\";")
+    if snapshots:
+        lines.append("// python binds imported names at import time; patches made later don't change them")
+        lines += snapshots
     return lines
 
 
@@ -1018,6 +1047,7 @@ def main():
         f'import {{ InvalidXmlError, PackageNotFoundError, PythonPptxError }} from "{rel_src}/exc.js";',
         f'import {{ defineChildren }} from "{rel_src}/oxml/xmlchemy.js";',
     ]
+    t.initializer_mocked = set(re.findall(r"initializer_mock\(\s*request\s*,\s*([A-Za-z_]\w*)", open(src, encoding="utf-8").read()))
     header += import_lines(t, rel_src, rel_test)
     header.append("void $py;")
     header.append("")
@@ -1029,7 +1059,7 @@ def main():
     # import exactly the shim names the body uses
     body_text = "\n".join(lines)
     shim_names = (r"(?<![\w$.])(\$[A-Za-z_]\w*|ANY|BytesIO|call|classMock|clsAttrMock|createAutospec|functionMock|"
-                  r"initializerMock|instanceMock|looseMock|MagicMock|methodMock|Mock|openMock|path|PropertyMock|"
+                  r"initializerMock|instanceMock|looseMock|MagicMock|methodMock|Mock|openMock|PropertyMock|"
                   r"propertyMock|pytest|pytestClass|pytestModule|pytestParam|varMock|patchObject)(?![\w$])")
     used = sorted(set(re.findall(shim_names, body_text)) - {"$py"})
     header = [f'import {{ {", ".join(used)} }} from "{rel_test}/pyshim.js";' if h == "__SHIM_IMPORTS__" else h for h in header]

@@ -7,7 +7,13 @@ import { $assertEqual, $call, $d, $mod, pytestClass, pytestModule } from "../pys
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-import { NamespacePrefixedTag, namespaces, nsdecls, nsuri, qn } from "../../src/oxml/ns.js";
+import { NamespacePrefixedTag as NamespacePrefixedTag$imported, namespaces as namespaces$imported, nsdecls as nsdecls$imported, nsuri as nsuri$imported, qn as qn$imported } from "../../src/oxml/ns.js";
+// python binds imported names at import time; patches made later don't change them
+const NamespacePrefixedTag = NamespacePrefixedTag$imported;
+const namespaces = namespaces$imported;
+const nsdecls = nsdecls$imported;
+const nsuri = nsuri$imported;
+const qn = qn$imported;
 void $py;
 
 pytestModule({

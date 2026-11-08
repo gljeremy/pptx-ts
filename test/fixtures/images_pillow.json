@@ -1,0 +1,344 @@
+{
+ "test/fixtures/images/b_300x300.bmp": {
+  "dpi": [
+   299.9992380004115,
+   299.9992380004115
+  ],
+  "format": "BMP",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/b_72_5x199_9.bmp": {
+  "dpi": [
+   72.49156085455714,
+   199.8978920551383
+  ],
+  "format": "BMP",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/b_72x72.bmp": {
+  "dpi": [
+   72.008961115161,
+   72.008961115161
+  ],
+  "format": "BMP",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/b_96x144.bmp": {
+  "dpi": [
+   96.01194815354799,
+   143.99252224403799
+  ],
+  "format": "BMP",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/exif.jpg": {
+  "dpi": [
+   240.0,
+   240.0
+  ],
+  "format": "JPEG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/exifcm.jpg": {
+  "dpi": [
+   609.6,
+   609.6
+  ],
+  "format": "JPEG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/gray.tiff": {
+  "dpi": [
+   1.0,
+   1.0
+  ],
+  "format": "TIFF",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/j_300x300.jpg": {
+  "dpi": [
+   300.0,
+   300.0
+  ],
+  "format": "JPEG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/j_72_5x199_9.jpg": {
+  "dpi": [
+   72.0,
+   199.0
+  ],
+  "format": "JPEG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/j_72x72.jpg": {
+  "dpi": [
+   72.0,
+   72.0
+  ],
+  "format": "JPEG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/j_96x144.jpg": {
+  "dpi": [
+   96.0,
+   144.0
+  ],
+  "format": "JPEG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/p_300x300.png": {
+  "dpi": [
+   299.9994,
+   299.9994
+  ],
+  "format": "PNG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/p_72_5x199_9.png": {
+  "dpi": [
+   72.49159999999999,
+   199.898
+  ],
+  "format": "PNG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/p_72x72.png": {
+  "dpi": [
+   72.009,
+   72.009
+  ],
+  "format": "PNG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/p_96x144.png": {
+  "dpi": [
+   96.012,
+   143.99259999999998
+  ],
+  "format": "PNG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/plain.gif": {
+  "dpi": null,
+  "format": "GIF",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/plain.jpg": {
+  "dpi": null,
+  "format": "JPEG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/plain.png": {
+  "dpi": null,
+  "format": "PNG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/prog.jpg": {
+  "dpi": [
+   150.0,
+   150.0
+  ],
+  "format": "JPEG",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/t_300x300.tiff": {
+  "dpi": [
+   300.0,
+   300.0
+  ],
+  "format": "TIFF",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/t_72_5x199_9.tiff": {
+  "dpi": [
+   72.5,
+   199.9
+  ],
+  "format": "TIFF",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/t_72x72.tiff": {
+  "dpi": [
+   72.0,
+   72.0
+  ],
+  "format": "TIFF",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/t_96x144.tiff": {
+  "dpi": [
+   96.0,
+   144.0
+  ],
+  "format": "TIFF",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/tc_300x300.tif": {
+  "dpi": [
+   300.0,
+   300.0
+  ],
+  "format": "TIFF",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/tc_72_5x199_9.tif": {
+  "dpi": [
+   72.5,
+   199.89999389648438
+  ],
+  "format": "TIFF",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/tc_72x72.tif": {
+  "dpi": [
+   72.0,
+   72.0
+  ],
+  "format": "TIFF",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/fixtures/images/tc_96x144.tif": {
+  "dpi": [
+   96.0,
+   144.0
+  ],
+  "format": "TIFF",
+  "size": [
+   123,
+   45
+  ]
+ },
+ "test/test_files/cdw-logo.eps": {
+  "dpi": null,
+  "format": "EPS",
+  "size": [
+   194,
+   194
+  ]
+ },
+ "test/test_files/expanded_pptx/docProps/thumbnail.jpeg": {
+  "dpi": [
+   72.0,
+   72.0
+  ],
+  "format": "JPEG",
+  "size": [
+   256,
+   192
+  ]
+ },
+ "test/test_files/monty-truth.png": {
+  "dpi": null,
+  "format": "PNG",
+  "size": [
+   150,
+   214
+  ]
+ },
+ "test/test_files/python-icon.jpeg": {
+  "dpi": null,
+  "format": "JPEG",
+  "size": [
+   204,
+   204
+  ]
+ },
+ "test/test_files/python-powered.png": {
+  "dpi": null,
+  "format": "PNG",
+  "size": [
+   140,
+   56
+  ]
+ },
+ "test/test_files/python.bmp": {
+  "dpi": [
+   0.0,
+   0.0
+  ],
+  "format": "BMP",
+  "size": [
+   211,
+   71
+  ]
+ }
+}

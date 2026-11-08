@@ -63,3 +63,12 @@ export class PartElementProxy extends ElementProxy {
     return this._part;
   }
 }
+
+/**
+ * python `a == b` for element proxies: identity, or `a.equals(b)` returning true (two proxies of
+ * the same element). Anything else, including null, compares unequal.
+ */
+export function proxyEquals(a: unknown, b: unknown): boolean {
+  if (a === b) return true;
+  return a instanceof ElementProxy && a.equals(b) === true;
+}

@@ -7,12 +7,26 @@ import { $assert, $assertEqual, $call, $cmp, $eq, $get, $hasattr, $is, $isinstan
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-import { InvalidXmlError } from "../../src/exc.js";
-import { registerElementCls } from "../../src/oxml/index.js";
-import { qn } from "../../src/oxml/ns.js";
-import { BaseIntType } from "../../src/oxml/simpletypes.js";
-import { BaseOxmlElement, Choice, OneAndOnlyOne, OneOrMore, OptionalAttribute, RequiredAttribute, ZeroOrMore, ZeroOrOne, ZeroOrOneChoice } from "../../src/oxml/xmlchemy.js";
+import { InvalidXmlError as InvalidXmlError$imported } from "../../src/exc.js";
+import { registerElementCls as registerElementCls$imported } from "../../src/oxml/index.js";
+import { qn as qn$imported } from "../../src/oxml/ns.js";
+import { BaseIntType as BaseIntType$imported } from "../../src/oxml/simpletypes.js";
+import { BaseOxmlElement as BaseOxmlElement$imported, Choice as Choice$imported, OneAndOnlyOne as OneAndOnlyOne$imported, OneOrMore as OneOrMore$imported, OptionalAttribute as OptionalAttribute$imported, RequiredAttribute as RequiredAttribute$imported, ZeroOrMore as ZeroOrMore$imported, ZeroOrOne as ZeroOrOne$imported, ZeroOrOneChoice as ZeroOrOneChoice$imported } from "../../src/oxml/xmlchemy.js";
 import { BaseBuilder } from "../unitdata.js";
+// python binds imported names at import time; patches made later don't change them
+const InvalidXmlError = InvalidXmlError$imported;
+const registerElementCls = registerElementCls$imported;
+const qn = qn$imported;
+const BaseIntType = BaseIntType$imported;
+const BaseOxmlElement = BaseOxmlElement$imported;
+const Choice = Choice$imported;
+const OneAndOnlyOne = OneAndOnlyOne$imported;
+const OneOrMore = OneOrMore$imported;
+const OptionalAttribute = OptionalAttribute$imported;
+const RequiredAttribute = RequiredAttribute$imported;
+const ZeroOrMore = ZeroOrMore$imported;
+const ZeroOrOne = ZeroOrOne$imported;
+const ZeroOrOneChoice = ZeroOrOneChoice$imported;
 void $py;
 
 

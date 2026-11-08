@@ -164,6 +164,7 @@ export function $eq(a: any, b: any): boolean {
     if (typeof b === "boolean" && typeof a === "number") return (b ? 1 : 0) === a;
     return a === b;
   }
+  if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
   if (a instanceof Uint8Array && b instanceof Uint8Array) return a.length === b.length && a.every((x, i) => x === b[i]);
   if ((Array.isArray(a) || isTyped(a)) && (Array.isArray(b) || isTyped(b))) {
     const aa = Array.from(a as any);
@@ -266,6 +267,7 @@ function pyErrStr(e: Error): string {
 }
 
 export function $repr(v: any): string {
+  if (v !== null && typeof v === "object" && typeof v.__repr__ === "function") return v.__repr__();
   if (typeof v === "string" || v instanceof String) return pyReprStr(String(v));
   if (Array.isArray(v)) return "[" + v.map($repr).join(", ") + "]";
   return $str(v);
@@ -726,7 +728,7 @@ export function $warns(_cls: any, fn: () => unknown): void {
 // ------------------------------------------------------------------------------------------------
 // calls with keyword arguments, operators, builtin-method dispatch
 
-export const path = {
+export const $path = {
   join: (...p: string[]) => nodePath.join(...p),
   abspath: (p: string) => nodePath.resolve(p),
   dirname: (p: string) => nodePath.dirname(p),
@@ -1031,3 +1033,33 @@ export const $sort = (o: any, opts: any = {}) => {
   const s = $sorted(o, opts?.[KW] ? { ...opts } : opts);
   o.splice(0, o.length, ...s);
 };
+
+/** The `pptx` package module: `__file__` places `templates/` (the bundled template sources) where python-pptx's are. */
+export const $pptx = { __file__: new URL("../__init__.py", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1") };
+
+/**
+ * python's `datetime` module, as pptx-ts represents it: a naive datetime is a `Date` holding that
+ * wall-clock time in UTC (see src/oxml/coreprops.ts); a timedelta is a number of milliseconds.
+ */
+class PyDatetime extends Date {
+  /** `dt.replace(tzinfo=None)`: datetimes here are already naive. */
+  replace(_kw?: any): PyDatetime {
+    return this;
+  }
+}
+export const $datetime = {
+  datetime: Object.assign(
+    function datetime(y: number, mo: number, d: number, h = 0, mi = 0, s = 0, us = 0): PyDatetime {
+      const t = new PyDatetime(Date.UTC(y, mo - 1, d, h, mi, s, Math.floor(us / 1000)));
+      t.setUTCFullYear(y);
+      return t;
+    },
+    { now: (_tz?: any) => new PyDatetime(Date.now()) },
+  ),
+  timedelta: (kw: any = {}) => {
+    const o = kw?.kwargs ?? kw;
+    return ((o.days ?? 0) * 86400 + (o.hours ?? 0) * 3600 + (o.minutes ?? 0) * 60 + (o.seconds ?? 0)) * 1000 + (o.milliseconds ?? 0);
+  },
+  timezone: { utc: null },
+};
+(($datetime.datetime as any).__pyPassKw = true);

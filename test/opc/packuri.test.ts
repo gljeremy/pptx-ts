@@ -7,7 +7,9 @@ import { $assertEqual, $call, $raises, pytestClass } from "../pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-import { PackURI } from "../../src/opc/packuri.js";
+import { PackURI as PackURI$imported } from "../../src/opc/packuri.js";
+// python binds imported names at import time; patches made later don't change them
+const PackURI = PackURI$imported;
 void $py;
 
 

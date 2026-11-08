@@ -7,9 +7,13 @@ import { $assert, $call, $eq, $is, $list, instanceMock, pytestClass } from "./py
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../src/exc.js";
 import { defineChildren } from "../src/oxml/xmlchemy.js";
-import { XmlPart } from "../src/opc/package.js";
-import { ElementProxy, ParentedElementProxy } from "../src/shared.js";
+import { XmlPart as XmlPart$imported } from "../src/opc/package.js";
+import { ElementProxy as ElementProxy$imported, ParentedElementProxy as ParentedElementProxy$imported } from "../src/shared.js";
 import { element } from "./unitutil/cxml.js";
+// python binds imported names at import time; patches made later don't change them
+const XmlPart = XmlPart$imported;
+const ElementProxy = ElementProxy$imported;
+const ParentedElementProxy = ParentedElementProxy$imported;
 void $py;
 
 

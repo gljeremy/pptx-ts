@@ -3,18 +3,31 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as $py from "../pyshim.js";
-import { $assert, $assertEqual, $b, $call, $collections, $d, $dict, $dictget, $enumerate, $eq, $get, $in, $is, $isinstance, $iter, $itertools, $kw, $len, $list, $m, $mod, $open, $raises, $range, $read, $remove, $set, $set_, $slice, $str, $truthy, $values, ANY, BytesIO, call, classMock, functionMock, initializerMock, instanceMock, methodMock, path, propertyMock, pytestClass } from "../pyshim.js";
+import { $assert, $assertEqual, $b, $call, $collections, $d, $dict, $dictget, $enumerate, $eq, $get, $in, $is, $isinstance, $iter, $itertools, $kw, $len, $list, $m, $mod, $open, $raises, $range, $read, $remove, $set, $set_, $slice, $str, $truthy, $values, ANY, BytesIO, call, classMock, functionMock, initializerMock, instanceMock, methodMock, propertyMock, pytestClass } from "../pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-import { CONTENT_TYPE as CT, RELATIONSHIP_TARGET_MODE as RTM, RELATIONSHIP_TYPE as RT } from "../../src/opc/constants.js";
-import { CT_Relationship, CT_Relationships } from "../../src/opc/oxml.js";
-import { OpcPackage, Part, PartFactory, XmlPart, _ContentTypeMap, _PackageLoader, _RelatableMixin, _Relationship, _Relationships } from "../../src/opc/package.js";
-import { PACKAGE_URI, PackURI } from "../../src/opc/packuri.js";
-import { parseXml } from "../../src/oxml/index.js";
-import { XmlPart as PresentationPart } from "../../src/opc/package.js";
+import { CONTENT_TYPE as CT$imported, RELATIONSHIP_TARGET_MODE as RTM$imported, RELATIONSHIP_TYPE as RT$imported } from "../../src/opc/constants.js";
+import { CT_Relationship as CT_Relationship$imported, CT_Relationships as CT_Relationships$imported } from "../../src/opc/oxml.js";
+import { OpcPackage, Part, PartFactory as PartFactory$imported, XmlPart, _ContentTypeMap, _PackageLoader, _RelatableMixin as _RelatableMixin$imported, _Relationship, _Relationships as _Relationships$imported } from "../../src/opc/package.js";
+import { PACKAGE_URI as PACKAGE_URI$imported, PackURI as PackURI$imported } from "../../src/opc/packuri.js";
+import { parseXml as parseXml$imported } from "../../src/oxml/index.js";
+import { PresentationPart as PresentationPart$imported } from "../../src/parts/presentation.js";
 import { element } from "../unitutil/cxml.js";
 import { absjoin, snippetBytes, testFileDir, testfileBytes } from "../unitutil/file.js";
+// python binds imported names at import time; patches made later don't change them
+const CT = CT$imported;
+const RTM = RTM$imported;
+const RT = RT$imported;
+const CT_Relationship = CT_Relationship$imported;
+const CT_Relationships = CT_Relationships$imported;
+const PartFactory = PartFactory$imported;
+const _RelatableMixin = _RelatableMixin$imported;
+const _Relationships = _Relationships$imported;
+const PACKAGE_URI = PACKAGE_URI$imported;
+const PackURI = PackURI$imported;
+const parseXml = parseXml$imported;
+const PresentationPart = PresentationPart$imported;
 void $py;
 
 

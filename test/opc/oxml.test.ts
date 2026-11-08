@@ -7,12 +7,25 @@ import { $assert, $assertEqual, $call, $cast, $encode, $get, $isinstance, $kw, $
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-import { RELATIONSHIP_TARGET_MODE as RTM } from "../../src/opc/constants.js";
-import { CT_Default, CT_Override, CT_Relationship, CT_Relationships, CT_Types, nsmap, oxmlTostring, serializePartXml } from "../../src/opc/oxml.js";
-import { PackURI } from "../../src/opc/packuri.js";
-import { parseXml } from "../../src/oxml/index.js";
-import { BaseOxmlElement } from "../../src/oxml/xmlchemy.js";
+import { RELATIONSHIP_TARGET_MODE as RTM$imported } from "../../src/opc/constants.js";
+import { CT_Default as CT_Default$imported, CT_Override as CT_Override$imported, CT_Relationship as CT_Relationship$imported, CT_Relationships as CT_Relationships$imported, CT_Types as CT_Types$imported, nsmap as nsmap$imported, oxmlTostring as oxmlTostring$imported, serializePartXml as serializePartXml$imported } from "../../src/opc/oxml.js";
+import { PackURI as PackURI$imported } from "../../src/opc/packuri.js";
+import { parseXml as parseXml$imported } from "../../src/oxml/index.js";
+import { BaseOxmlElement as BaseOxmlElement$imported } from "../../src/oxml/xmlchemy.js";
 import { element } from "../unitutil/cxml.js";
+// python binds imported names at import time; patches made later don't change them
+const RTM = RTM$imported;
+const CT_Default = CT_Default$imported;
+const CT_Override = CT_Override$imported;
+const CT_Relationship = CT_Relationship$imported;
+const CT_Relationships = CT_Relationships$imported;
+const CT_Types = CT_Types$imported;
+const nsmap = nsmap$imported;
+const oxmlTostring = oxmlTostring$imported;
+const serializePartXml = serializePartXml$imported;
+const PackURI = PackURI$imported;
+const parseXml = parseXml$imported;
+const BaseOxmlElement = BaseOxmlElement$imported;
 void $py;
 
 

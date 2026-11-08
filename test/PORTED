@@ -48,3 +48,17 @@ tests/test_table.py
 tests/oxml/test_table.py
 tests/text/test_fonts.py
 tests/text/test_layout.py
+tests/chart/test_axis.py
+tests/chart/test_category.py
+tests/chart/test_chart.py
+tests/chart/test_data.py
+tests/chart/test_datalabel.py
+tests/chart/test_legend.py
+tests/chart/test_marker.py
+tests/chart/test_plot.py
+tests/chart/test_point.py
+tests/chart/test_series.py
+tests/chart/test_xlsx.py
+tests/chart/test_xmlwriter.py
+tests/parts/test_chart.py
+tests/dml/test_chtfmt.py

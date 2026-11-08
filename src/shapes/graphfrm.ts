@@ -6,8 +6,7 @@ import { BaseShape } from "./base.js";
 import { ParentedElementProxy } from "../shared.js";
 import { GRAPHIC_DATA_URI_CHART, GRAPHIC_DATA_URI_OLEOBJ, GRAPHIC_DATA_URI_TABLE } from "../spec.js";
 import { Table } from "../table.js";
-// `pptx.chart.chart.Chart` is ported in stage 5 (gljeremy/pptx-ts#5)
-type Chart = any;
+import type { Chart } from "../chart/chart.js";
 import type { ShadowFormat } from "../dml/effect.js";
 import type { CT_GraphicalObjectData, CT_GraphicalObjectFrame } from "../oxml/shapes/graphfrm.js";
 import type { ChartPart } from "../parts/chart.js";

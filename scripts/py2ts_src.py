@@ -306,6 +306,47 @@ class Translator:
     def e_NamedExpr(self, n):
         return f"({self.expr(n.target)} = {self.expr(n.value)})"
 
+    def str_format(self, recv, args, kws):
+        """`"...{name}...".format(name=x)` / `.format(**{"name": x})` -> a template literal.
+
+        Fields go through `pyFormatValue()` (python `str()`: 1.5 -> "1.5", None -> "None"),
+        except `*_xml` fields, which are always strings already. A template that isn't a
+        string literal becomes `pyFormat(template, {...})`.
+        """
+        fields = {}
+        for k in kws:
+            if k.arg is not None:
+                fields[k.arg] = k.value
+            elif isinstance(k.value, ast.Dict) and all(isinstance(x, ast.Constant) for x in k.value.keys):
+                fields.update({x.value: v for x, v in zip(k.value.keys, k.value.values)})
+            else:
+                return f"/*TODO format **{self.expr(k.value)}*/{self.expr(recv)}"
+        for i, a in enumerate(args):
+            fields[str(i)] = a
+        if not (isinstance(recv, ast.Constant) and isinstance(recv.value, str)):
+            obj = "{ " + ", ".join(f"{js_str(k)}: {self.expr(v)}" for k, v in fields.items()) + " }"
+            return f"pyFormat({self.expr(recv)}, {obj})"
+        import string
+        out = ""
+        auto = 0
+        for lit, name, spec, conv in string.Formatter().parse(recv.value):
+            out += lit.replace("\\", "\\\\").replace("`", "\\`").replace("${", "\\${")
+            if name is None:
+                continue
+            if name == "":
+                name, auto = str(auto), auto + 1
+            if name not in fields:
+                out += "${/*TODO field " + name + "*/}"
+                continue
+            e = self.expr(fields[name])
+            if spec not in ("", "d", "s") or conv:
+                out += "${/*TODO :" + spec + "*/" + e + "}"
+            elif name.endswith("_xml") or spec == "d":
+                out += "${" + e + "}"
+            else:
+                out += "${pyFormatValue(" + e + ")}"
+        return "`" + out + "`"
+
     def kwargs(self, kws):
         return "{ " + ", ".join(f"{camel(k.arg)}: {self.expr(k.value)}" if k.arg else "..." + self.expr(k.value) for k in kws) + " }"
 
@@ -399,8 +440,8 @@ class Translator:
             recv = self.expr(f.value)
             if meth == "join" and isinstance(f.value, ast.Constant):
                 return f"{args[0]}.join({recv})"
-            if meth == "format" and isinstance(f.value, ast.Constant):
-                return f"/*TODO format*/{recv}"
+            if meth == "format":
+                return self.str_format(f.value, n.args, kws)
             if meth == "isdigit":
                 return r"/^\d+$/.test(" + recv + ")"
             if meth == "append" and "/oxml/" not in self.src_path.replace("\\", "/"):
@@ -724,6 +765,9 @@ class Translator:
         out = self.jsdoc(s, 0)
         bases = [ast.unparse(b) for b in s.bases if ast.unparse(b) not in ("object",)]
         ext = f" extends {bases[0]}" if bases else ""
+        if len(bases) > 1:
+            # TS has single inheritance: the other bases need a class-factory mixin by hand
+            ext += f" /*TODO mixin bases: {', '.join(bases[1:])}*/"
         out.append(f"export class {s.name}{ext} {{")
         members = []
         declared = {}

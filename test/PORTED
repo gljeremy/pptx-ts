@@ -43,3 +43,8 @@ tests/oxml/shapes/test_groupshape.py
 tests/oxml/shapes/test_picture.py
 tests/oxml/test_dml.py
 tests/test_action.py
+tests/text/test_text.py
+tests/test_table.py
+tests/oxml/test_table.py
+tests/text/test_fonts.py
+tests/text/test_layout.py

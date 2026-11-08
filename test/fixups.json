@@ -131,5 +131,24 @@
       "",
       "as above (0.0 is the integer index 0 in JS)"
     ]
+  ],
+  "test/text/layout.test.ts": [
+    [
+      "_init_.assertCalledOnceWith(line_source_, extents, \"foobar.ttf\");",
+      "_init_.assertCalledOnceWith(ANY, line_source_, extents, \"foobar.ttf\");",
+      "python's TextFitter is a tuple subclass built in __new__, so its mocked __init__ records no self; the TS class has a constructor, whose mock does"
+    ]
+  ],
+  "test/text/fonts.test.ts": [
+    [
+      "import * as $py from \"../pyshim.js\";",
+      "import * as $py from \"../pyshim.js\";\nimport { calcsize } from \"../../src/text/struct.js\";",
+      "python's struct.calcsize comes from src/text/struct.ts"
+    ],
+    [
+      "@skip",
+      "it_can_construct_from_a_path",
+      "patches python's builtin open(); _Stream.open() reads the file through pptx-ts's fileio"
+    ]
   ]
 }

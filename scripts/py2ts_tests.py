@@ -189,7 +189,7 @@ class T:
         base = n.value
         if isinstance(base, ast.Name):
             mod = self.module_aliases.get(base.id)
-            if mod == "io" and n.attr in ("BytesIO", "StringIO"):
+            if mod == "io" and n.attr in ("BytesIO", "StringIO", "RawIOBase", "BufferedReader"):
                 return "BytesIO"
             if mod == "pytest":
                 return f"pytest.{n.attr}"
@@ -635,11 +635,17 @@ class T:
                 return [p + f"$raises({exc}, () => {{"] + inner + [p + tail]
             if fn in ("pytest.warns", "warnings.catch_warnings"):
                 return [p + "{"] + self.body(s.body, ind + 1) + [p + "}"]
+        # a context manager: `__enter__()` gives the bound value, `__exit__()` runs afterwards
+        self.tmp_count = getattr(self, "tmp_count", 0) + 1
+        cm = f"$cm{self.tmp_count}"
+        out = [p + f"const {cm} = {self.expr(ce)};"]
         if item.optional_vars is not None and isinstance(item.optional_vars, ast.Name):
             name = item.optional_vars.id
             decl = "let " if self.declare(name) else ""
-            return [p + f"{decl}{ident(name)} = {self.expr(ce)};"] + self.body(s.body, ind)
-        return [p + "{"] + self.body(s.body, ind + 1) + [p + "}"]
+            out.append(p + f"{decl}{ident(name)} = $enter({cm});")
+        else:
+            out.append(p + f"$enter({cm});")
+        return out + [p + "try {"] + self.body(s.body, ind + 1) + [p + "} finally {", p + f"  $exit({cm});", p + "}"]
 
     def s_Import(self, s, ind):
         for a in s.names:

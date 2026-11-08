@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as $py from "./pyshim.js";
-import { $assert, $assertEqual, $b, $call, $is, $isinstance, $kw, $list, $open, $read, BytesIO, initializerMock, instanceMock, methodMock, propertyMock, pytestClass } from "./pyshim.js";
+import { $assert, $assertEqual, $b, $call, $cm1, $cm2, $enter, $exit, $is, $isinstance, $kw, $list, $open, $read, BytesIO, initializerMock, instanceMock, methodMock, propertyMock, pytestClass } from "./pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../src/exc.js";
 import { defineChildren } from "../src/oxml/xmlchemy.js";
@@ -50,9 +50,14 @@ const DescribeVideo: any = {
       } },
     from_stream_fixture: { args: ["video_", "from_blob_"], fn: (self: any, video_: any, from_blob_: any): any => {
         let blob: any, f: any, mime_type: any, movie_stream: any;
-        f = $open(TEST_VIDEO_PATH, "rb");
-        blob = $read(f);
-        movie_stream = new BytesIO(blob);
+        const $cm2 = $open(TEST_VIDEO_PATH, "rb");
+        f = $enter($cm2);
+        try {
+          blob = $read(f);
+          movie_stream = new BytesIO(blob);
+        } finally {
+          $exit($cm2);
+        }
         mime_type = "video/mp4";
         from_blob_.returnValue = video_;
         return [movie_stream, mime_type, blob, video_];
@@ -82,8 +87,13 @@ const DescribeVideo: any = {
   tests: [
     { name: "it_can_construct_from_a_path", args: ["video_", "from_blob_"], fn: (self: any, video_: any, from_blob_: any): any => {
         let blob: any, f: any, video: any;
-        f = $open(TEST_VIDEO_PATH, "rb");
-        blob = $read(f);
+        const $cm1 = $open(TEST_VIDEO_PATH, "rb");
+        f = $enter($cm1);
+        try {
+          blob = $read(f);
+        } finally {
+          $exit($cm1);
+        }
         from_blob_.returnValue = video_;
         video = Video.fromPathOrFileLike(TEST_VIDEO_PATH, "video/mp4");
         Video.fromBlob.assertCalledOnceWith(blob, "video/mp4", "dummy.mp4");

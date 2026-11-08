@@ -9,7 +9,7 @@ import { RELATIONSHIP_TYPE as RT } from "../opc/constants.js";
 import { ST_TextWrappingType } from "../oxml/simpletypes.js";
 import { Subshape } from "../shapes/index.js";
 import { FontFiles } from "./fonts.js";
-import { TextFitter } from "./layout.js";
+import { TextFitter, type FontFile } from "./layout.js";
 import { Centipoints, Emu, Length, Pt } from "../util.js";
 import type { ColorFormat } from "../dml/color.js";
 import type { MSO_TEXT_UNDERLINE_TYPE, PP_PARAGRAPH_ALIGNMENT } from "../enum/text.js";
@@ -82,7 +82,7 @@ export class TextFrame extends Subshape {
    * best efforts are made to locate a font file with matchhing `font_family`, `bold`, and
    * `italic` installed on the current system (usually succeeds if the font is installed).
    */
-  fitText(fontFamily: string = "Calibri", maxSize: number = 18, bold: boolean = false, italic: boolean = false, fontFile: string | null = null) {
+  fitText(fontFamily: string = "Calibri", maxSize: number = 18, bold: boolean = false, italic: boolean = false, fontFile: FontFile | null = null): void {
     if (this.text === "") {
       return;
     }
@@ -224,7 +224,7 @@ export class TextFrame extends Subshape {
    * font described by `family`, `bold`, and `italic`. If `font_file` is specified, it is used
    * to calculate the fit, whether or not it matches `family`, `bold`, and `italic`.
    */
-  _bestFitFontSize(family: string, maxSize: number, bold: boolean, italic: boolean, fontFile: string | null): number {
+  _bestFitFontSize(family: string, maxSize: number, bold: boolean, italic: boolean, fontFile: FontFile | null): number {
     if (fontFile === null) {
       fontFile = FontFiles.find(family, bold, italic);
     }

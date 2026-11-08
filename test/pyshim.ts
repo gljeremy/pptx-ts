@@ -516,7 +516,20 @@ export function $bytes(v: any = 0): Uint8Array {
   return new Uint8Array($list(v));
 }
 
-export const $encode = (s: string) => new TextEncoder().encode(s);
+export const $encode = (s: string, encoding = "utf-8") => {
+  const enc = encoding.toLowerCase().replace(/_/g, "-");
+  if (enc === "utf-16-be" || enc === "utf-16-le") {
+    const out = new Uint8Array(s.length * 2);
+    for (let i = 0; i < s.length; i++) {
+      const c = s.charCodeAt(i);
+      out[i * 2 + (enc === "utf-16-be" ? 0 : 1)] = c >> 8;
+      out[i * 2 + (enc === "utf-16-be" ? 1 : 0)] = c & 0xff;
+    }
+    return out;
+  }
+  if (enc === "latin-1" || enc === "iso-8859-1") return Uint8Array.from(s, (ch) => ch.charCodeAt(0));
+  return new TextEncoder().encode(s);
+};
 export const $decode = (b: Uint8Array) => new TextDecoder().decode(b);
 
 export function $iter(v: any): Iterator<any> {
@@ -1005,6 +1018,8 @@ export const $setdefault = (o: any, k: any, d: any = null) => {
   return o[String(k)];
 };
 export const $split = (o: any, sep?: string | null, max?: number) => {
+  // a non-string with its own split() (e.g. a table cell) is a method call
+  if (o !== null && typeof o === "object" && !(o instanceof String) && typeof o.split === "function") return o.split(...[sep, max].filter((x) => x !== undefined));
   const s = String(o);
   if (sep === undefined || sep === null) return s.trim() === "" ? [] : s.trim().split(/\s+/);
   const parts = s.split(sep);
@@ -1032,7 +1047,7 @@ export const $splitlines = (o: any) => {
   return l;
 };
 export const $isdigit = (o: any) => /^\d+$/.test(String(o));
-export const $read = (o: any) => callOwn(o, "read", []);
+export const $read = (o: any, ...a: any[]) => callOwn(o, "read", a);
 export const $clear = (o: any) => (isArr(o) ? void (o.length = 0) : isPlain(o) ? void Object.keys(o).forEach((k) => delete o[k]) : callOwn(o, "clear", []));
 export const $sort = (o: any, opts: any = {}) => {
   const s = $sorted(o, opts?.[KW] ? { ...opts } : opts);
@@ -1068,3 +1083,13 @@ export const $datetime = {
   timezone: { utc: null },
 };
 (($datetime.datetime as any).__pyPassKw = true);
+
+/** `with cm as x:` entry: `cm.__enter__()` when defined, else `cm` itself. */
+export function $enter(cm: any): any {
+  return cm !== null && cm !== undefined && typeof cm.__enter__ === "function" ? cm.__enter__() : cm;
+}
+
+/** `with` exit: `cm.__exit__(None, None, None)` when defined. */
+export function $exit(cm: any): void {
+  if (cm !== null && cm !== undefined && typeof cm.__exit__ === "function") cm.__exit__(null, null, null);
+}

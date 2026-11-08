@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as $py from "../pyshim.js";
-import { $append, $assert, $assertEqual, $b, $call, $is, $isinstance, $kw, $list, $open, $read, $t1, $truthy, call, classMock, initializerMock, instanceMock, methodMock, pytestClass } from "../pyshim.js";
+import { $append, $assert, $assertEqual, $b, $call, $cm2, $enter, $exit, $is, $isinstance, $kw, $list, $open, $read, $t1, $truthy, call, classMock, initializerMock, instanceMock, methodMock, pytestClass } from "../pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
@@ -404,8 +404,13 @@ const DescribeSlidePart: any = {
         let expected_xml: any, f: any, path: any, sld: any;
         path = absjoin(testFileDir, "minimal_slide.xml");
         sld = CT_Slide.new();
-        f = $open(path, "r");
-        expected_xml = $read(f);
+        const $cm2 = $open(path, "r");
+        f = $enter($cm2);
+        try {
+          expected_xml = $read(f);
+        } finally {
+          $exit($cm2);
+        }
         $assertEqual(sld.xml, expected_xml);
       } },
     { name: "it_gets_its_notes_slide_to_help", args: ["notes_slide_fixture"], fn: (self: any, notes_slide_fixture: any): any => {

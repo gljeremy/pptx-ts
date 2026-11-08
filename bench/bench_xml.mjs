@@ -1,5 +1,6 @@
 // XML engine split: parse vs serialize vs UTF-8 decode (pptx-ts only).
 // Usage: npm run build && node bench/bench_xml.mjs <deck.pptx>
+import fs from "node:fs";
 import "../dist/index.js";
 import { OpcPackage } from "../dist/opc/package.js";
 import { parseXml } from "../dist/oxml/parser.js";

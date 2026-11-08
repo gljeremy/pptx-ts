@@ -13,6 +13,9 @@ function patchableModules(): Plugin {
     transform(code, id) {
       if (!/[\\/]src[\\/].*\.ts$/.test(id) || id.includes("node_modules")) return null;
       const names = new Set<string>();
+      // `class X {...}` -> `let X = class {...}`: python code inside a class looks the class name
+      // up as a module global, so it sees a patched value; a JS class body's own name would not
+      code = code.replace(/^(export\s+)?class\s+([A-Za-z_$][\w$]*)(\s|\{)/gm, (_m, exp, name, after) => `${exp ?? ""}let ${name} = class${after}`);
       const out = code.replace(/^(export\s+)?(const|let|var|class|function\*?|async function)\s+([A-Za-z_$][\w$]*)/gm, (m, exp, kind, name) => {
         names.add(name);
         return kind === "const" ? `${exp ?? ""}let ${name}` : m;

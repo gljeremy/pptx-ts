@@ -7,7 +7,13 @@ import { $abs, $assert, $assertEqual, $call, $cmp, $is, $kw, $list, $mod, $raise
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-import { BaseIntType, BaseSimpleType, ST_Coordinate, ST_HexColorRGB, ST_Percentage } from "../../src/oxml/simpletypes.js";
+import { BaseIntType as BaseIntType$imported, BaseSimpleType as BaseSimpleType$imported, ST_Coordinate as ST_Coordinate$imported, ST_HexColorRGB as ST_HexColorRGB$imported, ST_Percentage as ST_Percentage$imported } from "../../src/oxml/simpletypes.js";
+// python binds imported names at import time; patches made later don't change them
+const BaseIntType = BaseIntType$imported;
+const BaseSimpleType = BaseSimpleType$imported;
+const ST_Coordinate = ST_Coordinate$imported;
+const ST_HexColorRGB = ST_HexColorRGB$imported;
+const ST_Percentage = ST_Percentage$imported;
 void $py;
 
 

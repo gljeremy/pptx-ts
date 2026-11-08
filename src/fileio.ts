@@ -125,3 +125,16 @@ export function bytesOf(src: FileSource): Uint8Array {
 }
 
 export const isZipBytes = (b: Uint8Array): boolean => b.length >= 4 && b[0] === 0x50 && b[1] === 0x4b && (b[2] === 3 || b[2] === 5 || b[2] === 7);
+
+/** python `os.path.basename()` (accepts both / and \ separators). */
+export function basename(path: string): string {
+  const i = Math.max(path.lastIndexOf("/"), path.lastIndexOf("\\"));
+  return path.slice(i + 1);
+}
+
+/** python `os.path.splitext(path)[1]`, e.g. ".mp4" ("" when there's none). */
+export function extname(path: string): string {
+  const base = basename(path);
+  const i = base.lastIndexOf(".");
+  return i <= 0 || /^\.+$/.test(base.slice(0, i + 1)) ? "" : base.slice(i);
+}

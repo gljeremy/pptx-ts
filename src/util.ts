@@ -172,3 +172,79 @@ export function pyTypeName(v: unknown): string {
   const name = (v as object).constructor?.name ?? "object";
   return `<class '${name}'>`;
 }
+
+/**
+ * Python `fmt % args` for the conversions python-pptx uses (%s %d %i %r %f %x %X %%, with
+ * flags, width and precision). A number `fmt` is python's numeric modulo instead.
+ */
+export function pyPercent(fmt: string | number, args: readonly unknown[]): any {
+  if (typeof fmt === "number") return pyMod(fmt, args[0] as number);
+  let i = 0;
+  const out = fmt.replace(/%([-#0 +]*)(\d*)(?:\.(\d+))?([sdirfxX%])/g, (_m, flags: string, width: string, prec: string | undefined, conv: string) => {
+    if (conv === "%") return "%";
+    if (i >= args.length) throw new TypeError("not enough arguments for format string");
+    const v = args[i++];
+    let s: string;
+    switch (conv) {
+      case "s":
+        s = typeof v === "number" && !Number.isInteger(v) ? pyFloatStr(v) : pyStr(v);
+        if (prec !== undefined) s = s.slice(0, Number(prec));
+        break;
+      case "r":
+        s = pyRepr(v);
+        break;
+      case "d":
+      case "i":
+        s = String(Math.trunc(Number(v)));
+        break;
+      case "f":
+        s = Number(v).toFixed(prec === undefined ? 6 : Number(prec));
+        break;
+      default:
+        s = Math.trunc(Number(v)).toString(16);
+        if (conv === "X") s = s.toUpperCase();
+    }
+    if (flags.includes("+") && conv !== "s" && conv !== "r" && Number(v) >= 0) s = "+" + s;
+    const w = width ? Number(width) : 0;
+    if (s.length < w) {
+      if (flags.includes("-")) s = s.padEnd(w);
+      else if (flags.includes("0") && conv !== "s" && conv !== "r") s = s.startsWith("-") || s.startsWith("+") ? s[0] + s.slice(1).padStart(w - 1, "0") : s.padStart(w, "0");
+      else s = s.padStart(w);
+    }
+    return s;
+  });
+  if (i < args.length) throw new TypeError("not all arguments converted during string formatting");
+  return out;
+}
+
+/**
+ * True when `v` should be taken as a length rather than a plain quantity, where python-pptx
+ * tells the two apart with `isinstance(v, Length)`. Lengths are plain EMU numbers here, so a
+ * `Length` object, or an integer of at least 1000 EMU (about 0.08pt), counts as a length;
+ * smaller values and fractions are quantities such as a line-spacing multiple.
+ */
+export function isLengthValue(v: unknown): v is number {
+  if (v instanceof Length) return true;
+  return typeof v === "number" && Number.isInteger(v) && Math.abs(v) >= 1000;
+}
+
+/** Python ordering comparison for `sorted()`: numbers numerically, strings by code point, arrays lexicographically. */
+export function pyCmp(a: any, b: any): number {
+  if (Array.isArray(a) && Array.isArray(b)) {
+    for (let i = 0; i < Math.min(a.length, b.length); i++) {
+      const c = pyCmp(a[i], b[i]);
+      if (c !== 0) return c;
+    }
+    return a.length - b.length;
+  }
+  if (a instanceof Number) a = a.valueOf();
+  if (b instanceof Number) b = b.valueOf();
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+
+/** python `xml.sax.saxutils.escape(s, entities)`: escape &, < and > (plus any extra `entities`). */
+export function xmlEscape(s: string, entities: Record<string, string> = {}): string {
+  let out = s.replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;");
+  for (const [k, v] of Object.entries(entities)) out = out.split(k).join(v);
+  return out;
+}

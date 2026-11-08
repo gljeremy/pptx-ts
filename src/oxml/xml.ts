@@ -162,6 +162,19 @@ export class XmlElement implements Iterable<XmlNode> {
   }
 
   set(name: string, value: string): void {
+    // like lxml, a namespaced attribute whose namespace isn't in scope gets it declared here
+    if (name.charCodeAt(0) === 123 && !this._attrs.has(name)) {
+      const uri = splitClark(name)[0]!;
+      if (uri !== XML_NS && !this._inScopeDecls().some((d) => d[1] === uri && d[0] !== null)) {
+        let p = preferredPrefixes[uri] ?? null;
+        if (p === null || this._lookupNs(p) !== undefined) {
+          let i = 0;
+          while (this._lookupNs(`ns${i}`) !== undefined) i++;
+          p = `ns${i}`;
+        }
+        (this._nsDecls ??= []).push([p, uri]);
+      }
+    }
     this._attrs.set(name, String(value));
   }
 

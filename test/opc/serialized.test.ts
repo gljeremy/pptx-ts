@@ -3,16 +3,29 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as $py from "../pyshim.js";
-import { $assert, $assertEqual, $b, $call, $d, $get, $hashlib, $in, $is, $kw, $len, $list, $mod, $raises, $read, $str, $strip, $zipfile, ANY, BytesIO, call, classMock, functionMock, initializerMock, instanceMock, methodMock, propertyMock, pytestClass } from "../pyshim.js";
+import { $assert, $assertEqual, $b, $call, $d, $get, $hashlib, $in, $is, $kw, $len, $list, $mod, $raises, $read, $str, $strip, $t1, $zipfile, ANY, BytesIO, call, classMock, functionMock, initializerMock, instanceMock, methodMock, propertyMock, pytestClass } from "../pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-import { PackageNotFoundError } from "../../src/exc.js";
-import { CONTENT_TYPE as CT } from "../../src/opc/constants.js";
-import { Part, _Relationships } from "../../src/opc/package.js";
-import { CONTENT_TYPES_URI, PackURI } from "../../src/opc/packuri.js";
-import { PackageReader, PackageWriter, _ContentTypesItem, _DirPkgReader, _PhysPkgReader, _PhysPkgWriter, _ZipPkgReader, _ZipPkgWriter } from "../../src/opc/serialized.js";
+import { PackageNotFoundError as PackageNotFoundError$imported } from "../../src/exc.js";
+import { CONTENT_TYPE as CT$imported } from "../../src/opc/constants.js";
+import { Part as Part$imported, _Relationships as _Relationships$imported } from "../../src/opc/package.js";
+import { CONTENT_TYPES_URI as CONTENT_TYPES_URI$imported, PackURI as PackURI$imported } from "../../src/opc/packuri.js";
+import { PackageReader as PackageReader$imported, PackageWriter, _ContentTypesItem, _DirPkgReader as _DirPkgReader$imported, _PhysPkgReader as _PhysPkgReader$imported, _PhysPkgWriter as _PhysPkgWriter$imported, _ZipPkgReader as _ZipPkgReader$imported, _ZipPkgWriter as _ZipPkgWriter$imported } from "../../src/opc/serialized.js";
 import { absjoin, snippetText, testFileDir } from "../unitutil/file.js";
+// python binds imported names at import time; patches made later don't change them
+const PackageNotFoundError = PackageNotFoundError$imported;
+const CT = CT$imported;
+const Part = Part$imported;
+const _Relationships = _Relationships$imported;
+const CONTENT_TYPES_URI = CONTENT_TYPES_URI$imported;
+const PackURI = PackURI$imported;
+const PackageReader = PackageReader$imported;
+const _DirPkgReader = _DirPkgReader$imported;
+const _PhysPkgReader = _PhysPkgReader$imported;
+const _PhysPkgWriter = _PhysPkgWriter$imported;
+const _ZipPkgReader = _ZipPkgReader$imported;
+const _ZipPkgWriter = _ZipPkgWriter$imported;
 void $py;
 
 
@@ -288,8 +301,9 @@ const Describe_ZipPkgWriter: any = {
     { name: "it_can_write_a_blob", skip: "exercises python's zipfile.ZipFile; covered by test/opc/zip_writer.test.ts", args: ["_zipf_prop_"], fn: (self: any, _zipf_prop_: any): any => {
         let members: any, pack_uri: any, pkg_writer: any, zipf: any;
         pack_uri = $call(PackURI, "/part/name.xml");
-        _zipf_prop_.returnValue = $zipfile.ZipFile(new BytesIO(), "w");
-        zipf = $zipfile.ZipFile(new BytesIO(), "w");
+        const $t1 = $zipfile.ZipFile(new BytesIO(), "w");
+        _zipf_prop_.returnValue = $t1;
+        zipf = $t1;
         pkg_writer = $call(_ZipPkgWriter, "");
         pkg_writer.write(pack_uri, $b("blob"));
         members = $d(Object.fromEntries($list(zipf.namelist()).map((name: any) => [$call(PackURI, $mod("/%s", name)), $read(zipf, name)])));

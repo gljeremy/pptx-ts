@@ -405,7 +405,7 @@ const MOCK_API = new Set([
 const PASSTHROUGH = new Set(["then", "toJSON", "asymmetricMatch", "$$typeof", "nodeType", "tagName", "constructor", "_isMockFunction", "__esModule", "@@__IMMUTABLE_ITERABLE__@@", "@@__IMMUTABLE_RECORD__@@", "toString", "valueOf", "inspect"]);
 
 // python protocol dunders and the JS spellings the source uses for them
-const PROTOCOL_ALIAS: Record<string, string> = { get: "__getitem__", has: "__contains__" };
+const PROTOCOL_ALIAS: Record<string, string> = { get: "__getitem__", at: "__getitem__", has: "__contains__" };
 
 interface MakeOpts {
   name?: string;
@@ -909,8 +909,12 @@ export function looseMock(request: FixtureRequest, kwargs?: any): any {
   return m;
 }
 
-function camelMember(cls: any, name: string): string {
+/** JS spellings of python protocol methods mocked by name (`method_mock(request, X, "__iter__")`). */
+const DUNDER_MEMBER: Record<string, string | symbol> = { __iter__: Symbol.iterator, __getitem__: Symbol.for("py.getitem"), __len__: Symbol.for("py.len") };
+
+function camelMember(cls: any, name: string): any {
   if (lookupMember(cls, name).desc) return name;
+  if (name in DUNDER_MEMBER) return DUNDER_MEMBER[name];
   const c = camel(name);
   return c;
 }
@@ -926,9 +930,12 @@ export function methodMock(request: FixtureRequest, cls: any, methodName: string
   const st = m._mockState as MockState;
   if (!isStatic && autospec) st.sig = [{ name: "self" }, ...(signatureOf(fn) ?? [])];
   applyKwargs(m, kwargs);
-  const value = isStatic || !autospec ? m : function (this: any, ...args: any[]) {
+  // an autospec'd instance method receives `self`; read through an instance it still exposes the
+  // mock's API (`obj.method.assert_called_once_with(obj, ...)`), like python's autospec function
+  const bound = function (this: any, ...args: any[]) {
     return m(this, ...args);
   };
+  const value = isStatic || !autospec ? m : new Proxy(bound, { get: (t, p, r) => (p === "call" || p === "apply" || p === "bind" ? Reflect.get(t, p, r) : m[p]) });
   patchAttr(request, host, name, { value, writable: true });
   return m;
 }

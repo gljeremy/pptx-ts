@@ -7,7 +7,15 @@ import { $assertEqual, $call, $getattr, $list, pytestClass } from "./pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../src/exc.js";
 import { defineChildren } from "../src/oxml/xmlchemy.js";
-import { Centipoints, Cm, Emu, Inches, Length, Mm, Pt } from "../src/util.js";
+import { Centipoints as Centipoints$imported, Cm as Cm$imported, Emu as Emu$imported, Inches as Inches$imported, Length as Length$imported, Mm as Mm$imported, Pt as Pt$imported } from "../src/util.js";
+// python binds imported names at import time; patches made later don't change them
+const Centipoints = Centipoints$imported;
+const Cm = Cm$imported;
+const Emu = Emu$imported;
+const Inches = Inches$imported;
+const Length = Length$imported;
+const Mm = Mm$imported;
+const Pt = Pt$imported;
 void $py;
 
 

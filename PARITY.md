@@ -8,13 +8,29 @@ Port of [python-pptx](https://github.com/scanny/python-pptx) at commit `278b47b`
 | Stage | Scope | Status |
 | --- | --- | --- |
 | 1 | XML engine, `oxml/xmlchemy`, `oxml/simpletypes`, `oxml/ns`, `opc/*`, `util`, `shared`, `exc` | **done** |
-| 2 | `enum/*`, `package.py`, `presentation.py`, `parts/*` (presentation, slide, coreprops, image, media, embeddedpackage), `slide.py`, `oxml/presentation`, `oxml/slide`, `oxml/theme`, `oxml/coreprops`, image header parsing (replaces Pillow) — `Presentation()` works | open |
-| 3 | `shapes/*`, `oxml/shapes/*`, `dml/*`, `oxml/dml/*`, `action.py`, `media.py` | open |
-| 4 | `text/*`, `oxml/text`, `table.py`, `oxml/table`, font metrics (`text/fonts.py`, `text/layout.py`) | open |
-| 5 | `chart/*`, `oxml/chart/*`, `parts/chart`, embedded workbook writer (replaces XlsxWriter) | open |
+| 2 | `enum/*`, `api.py`, `package.py`, `presentation.py`, `parts/*` (presentation, slide, coreprops, image, media, embeddedpackage), `slide.py`, `media.py`, `oxml/presentation`, `oxml/slide`, `oxml/theme`, `oxml/coreprops`, image header parsing (replaces Pillow) — `Presentation()` works | **done** |
+| 3 | `shapes/*`, `oxml/shapes/*`, `dml/*`, `oxml/dml/*`, `action.py` | source ported with stage 2 (slides need it); upstream tests open |
+| 4 | `text/text.py`, `oxml/text`, `table.py`, `oxml/table` ported with stage 2; font metrics (`text/fonts.py`, `text/layout.py`, used only by `fitText()`) | upstream tests and font metrics open |
+| 5 | `chart/*`, `oxml/chart/*`, embedded workbook writer (replaces XlsxWriter); `parts/chart` ported except `ChartPart.chart` | open |
 | 6 | the 54 behave feature files (371 scenarios) as vitest acceptance tests, docs, benchmarks | open |
 
-## Ported upstream tests (stage 1)
+## Ported upstream tests
+
+### Stage 2 (184 upstream test functions)
+
+| Upstream | pptx-ts |
+| --- | --- |
+| `tests/enum/test_base.py`, `test_shapes.py` | `test/enum/*.test.ts` |
+| `tests/test_api.py`, `test_package.py`, `test_presentation.py`, `test_slide.py`, `test_media.py` | `test/*.test.ts` |
+| `tests/parts/test_presentation.py`, `test_slide.py`, `test_coreprops.py`, `test_image.py`, `test_media.py`, `test_embeddedpackage.py` | `test/parts/*.test.ts` |
+| `tests/oxml/test_presentation.py`, `test_slide.py`, `test_theme.py` | `test/oxml/*.test.ts` |
+| `tests/oxml/test___init__.py` | `test/oxml/__init__.test.ts` (hand-ported: upstream tests lxml's parser objects) |
+
+Additional pptx-ts tests: `test/image/headers.test.ts` (image format/size/DPI against what
+Pillow reports for 33 images), `test/readme.test.ts`. `scripts/crosscheck/` compares the
+whole API surface and re-saved bytes with python-pptx on all 66 upstream test decks.
+
+### Stage 1
 
 | Upstream | pptx-ts |
 | --- | --- |
@@ -36,6 +52,10 @@ XML parts), `test/opc/roundtrip.test.ts` (open → save → reopen of every test
 | `Describe_ZipPkgWriter` `__enter__` / `__exit__` / `it_can_write_a_blob` / `_zipf` | python `zipfile` and context managers; replaced by `test/opc/zip_writer.test.ts` |
 | `DescribeLength.it_can_construct_from_convenient_units` (`isinstance(..., Length)` dropped) | lengths are numbers |
 | `Describe_Relationships.it_collects_relationships_by_reltype_to_help` (CHART lookup) | python defaultdict; callers default to `[]` |
+| `DescribeBaseEnum.it_provides_a_docstring_for_each_member` (`__doc__` asserts dropped) | no docstrings in JS (members do carry `__doc__`) |
+| `DescribePresentation.it_opens_default_template_on_no_path_provided` (`tests/test_api.py`) | the default template is opened from bytes bundled in the library, not from a file path; the test checks those bytes |
+| `DescribeSlidePart.it_can_add_a_chart_part` | `pptx.chart.data.ChartData` is a stand-in class until stage 5; the test only mocks it |
+| `DescribeParseXml.it_uses_oxml_configured_parser_to_parse_xml` (`tests/oxml/test___init__.py`) | checks delegation to lxml's `etree.fromstring`; no equivalent |
 
 ## Behavioral differences
 
@@ -53,3 +73,27 @@ XML parts), `test/opc/roundtrip.test.ts` (open → save → reopen of every test
    `NotImplementedError` are exported classes; JS `TypeError` stands in for python's.
 6. **Zip output** is written by fflate (deflate level 6, like python's zipfile); archives
    differ byte-wise from python's but contain identical members.
+7. **Indexed access** to sequences is `.at(idx)` (python `slides[idx]`, negative indexes
+   work), because several collections already have a `get()` with another meaning
+   (`slides.get(slideId)`, `slide.placeholders.get(idx)` for python's
+   `slide.placeholders[idx]`, `layoutPlaceholders.get(idx)`).
+8. **Enum members** are `Number` objects (python int enums), so compare members with `===`
+   and convert with `+member` or `.value`; `String(member)` is python's `str()`
+   (`"TITLE (1)"`). `PROG_ID` members are objects with `progId`, `iconFilename`, `width`,
+   `height`.
+9. **Dates**: python's naive `datetime` values are `Date`s holding the wall-clock time in UTC
+   (read with `getUTC*()`); core-property dates are written from those UTC fields.
+10. **`Presentation()` with no argument** opens the default template from bytes bundled in the
+    library (python opens `pptx/templates/default.pptx` from disk). The OLE-object icons are
+    bundled the same way.
+11. **Images**: format, pixel size and DPI come from the image headers rather than Pillow,
+    matching Pillow 11.0's values (including its quirks: a JPEG JFIF density counts only when
+    its unit is dots per inch; WMF and most EMF files report a single dpi value, which
+    python-pptx ignores in favor of 72). Formats
+    Pillow opens but python-pptx rejects (WEBP, ICO, PSD, ICNS, EPS) give python-pptx's
+    "unsupported image format" `ValueError`; anything else raises `UnidentifiedImageError`.
+12. **Line spacing** (stage 4): python tells a `Length` (points) from a float (lines) with
+    `isinstance`; here an integer of at least 1000 EMU, or a `Length` object, is a length and
+    anything smaller or fractional is a multiple of lines.
+13. **Not yet available**: `TextFrame.fitText()` (needs font metrics, stage 4) and
+    `ChartPart.chart` / chart objects (stage 5) raise `NotImplementedError`.

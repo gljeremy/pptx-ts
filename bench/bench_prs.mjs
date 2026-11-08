@@ -19,5 +19,16 @@ const build = () => {
   for (let i = 0; i < 100; i++) prs.slides.addSlide(prs.slideLayouts.at(i % 2));
   prs.save(new BytesIO());
 };
+const shapes = () => {
+  const prs = Presentation();
+  const slide = prs.slides.addSlide(prs.slideLayouts.at(6));
+  slide.shapes.turboAddEnabled = true;
+  for (let i = 0; i < 1000; i++) {
+    const tb = slide.shapes.addTextbox(i * 1000, i * 1000, 914400, 457200);
+    tb.textFrame.text = `shape ${i}`;
+  }
+  prs.save(new BytesIO());
+};
 console.log(`open + save presentation  ${best(openSave).toFixed(1).padStart(8)} ms`);
 console.log(`build 100-slide deck      ${best(build).toFixed(1).padStart(8)} ms`);
+console.log(`1000 text boxes on a slide ${best(shapes, 3).toFixed(1).padStart(8)} ms`);

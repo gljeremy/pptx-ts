@@ -616,7 +616,7 @@ class Parser {
       } else if (s.startsWith("<!DOCTYPE", this.i)) {
         this.skipDoctype();
       } else if (s.charCodeAt(this.i) === 60) {
-        root = this.element(null);
+        root = this.element(null, NsScope.root(null));
         break;
       } else if (this.i < s.length) {
         this.err("Start tag expected, '<' not found");
@@ -666,17 +666,18 @@ class Parser {
   }
 
   /** Parse an element starting at '<'. */
-  element(parent: XmlElement | null): XmlElement {
+  element(parent: XmlElement | null, scope: NsScope): XmlElement {
     const s = this.s;
+    const n = s.length;
     this.i++; // <
     const qname = this.name();
-    // attributes (raw)
+    // attributes: namespace declarations first (they apply to this element's own name too)
     let rawAttrs: string[] | null = null;
     let decls: NsDecl[] | null = null;
     let selfClosing = false;
     for (;;) {
-      this.skipWs();
-      const c = s.charCodeAt(this.i);
+      let c = s.charCodeAt(this.i);
+      while (c === 32 || c === 10 || c === 13 || c === 9) c = s.charCodeAt(++this.i);
       if (c === 62) {
         this.i++;
         break;
@@ -687,89 +688,93 @@ class Parser {
         selfClosing = true;
         break;
       }
-      if (this.i >= s.length) this.err("Premature end of data");
+      if (this.i >= n) this.err("Premature end of data");
       const an = this.name();
       this.skipWs();
       if (s.charCodeAt(this.i) !== 61) this.err("Specification mandates value for attribute " + an);
       this.i++;
       this.skipWs();
-      const q = s[this.i];
-      if (q !== '"' && q !== "'") this.err("AttValue: \" or ' expected");
-      const end = s.indexOf(q, this.i + 1);
-      if (end < 0) this.err("unterminated attribute value");
-      let raw = s.slice(this.i + 1, end);
-      this.i = end + 1;
+      const q = s.charCodeAt(this.i);
+      if (q !== 34 && q !== 39) this.err("AttValue: \" or ' expected");
+      const vEnd = s.indexOf(q === 34 ? '"' : "'", this.i + 1);
+      if (vEnd < 0) this.err("unterminated attribute value");
+      let raw = s.slice(this.i + 1, vEnd);
+      this.i = vEnd + 1;
       // attribute-value normalization: literal whitespace chars become spaces
-      if (/[\n\r\t]/.test(raw)) raw = raw.replace(/\r\n|[\n\r\t]/g, " ");
-      const v = decodeEntities(raw, this.i);
-      if (an === "xmlns") (decls ??= []).push([null, v]);
-      else if (an.startsWith("xmlns:")) (decls ??= []).push([an.slice(6), v]);
-      else (rawAttrs ??= []).push(an, v);
+      if (raw.indexOf("\n") >= 0 || raw.indexOf("\r") >= 0 || raw.indexOf("\t") >= 0) raw = raw.replace(/\r\n|[\n\r\t]/g, " ");
+      const v = raw.indexOf("&") >= 0 ? decodeEntities(raw, this.i) : raw;
+      if (an.charCodeAt(0) === 120 && an.startsWith("xmlns")) {
+        if (an.length === 5) {
+          (decls ??= []).push([null, v]);
+          continue;
+        }
+        if (an.charCodeAt(5) === 58) {
+          (decls ??= []).push([an.slice(6), v]);
+          continue;
+        }
+      }
+      (rawAttrs ??= []).push(an, v);
     }
-    // resolve the element name
-    const colon = qname.indexOf(":");
-    const prefix = colon >= 0 ? qname.slice(0, colon) : null;
-    const local = colon >= 0 ? qname.slice(colon + 1) : qname;
-    const lookup = (p: string | null): string | undefined => {
-      if (decls) for (const [dp, du] of decls) if (dp === p) return du;
-      return parent ? parent._lookupNs(p) : p === "xml" ? XML_NS : undefined;
-    };
-    const uri = lookup(prefix);
-    if (prefix !== null && uri === undefined) this.err(`Namespace prefix ${prefix} on ${local} is not defined`);
-    const tag = uri ? `{${uri}}${local}` : local;
-    const cls = lookupClass(tag);
-    const el = new cls();
-    el._init(tag, prefix);
+    // elements that declare namespaces start a new scope; most share their parent's
+    if (decls !== null) scope = scope.child(decls);
+    let resolved = scope.tags.get(qname);
+    if (resolved === undefined) {
+      const colon = qname.indexOf(":");
+      const prefix = colon >= 0 ? qname.slice(0, colon) : null;
+      const local = colon >= 0 ? qname.slice(colon + 1) : qname;
+      const uri = scope.uri(prefix);
+      if (prefix !== null && uri === undefined) this.err(`Namespace prefix ${prefix} on ${local} is not defined`);
+      const tag = uri ? `{${uri}}${local}` : local;
+      resolved = { tag, prefix, cls: lookupClass(tag) };
+      scope.tags.set(qname, resolved);
+    }
+    const el = new resolved.cls();
+    el._init(resolved.tag, resolved.prefix);
     el._nsDecls = decls;
     el._parent = parent;
-    if (rawAttrs) {
+    if (rawAttrs !== null) {
       const attrs = el._attrs;
       for (let k = 0; k < rawAttrs.length; k += 2) {
         const an = rawAttrs[k];
         const ac = an.indexOf(":");
         if (ac < 0) attrs.set(an, rawAttrs[k + 1]);
         else {
-          const ap = an.slice(0, ac);
-          const au = ap === "xml" ? XML_NS : lookup(ap);
-          if (au === undefined) this.err(`Namespace prefix ${ap} for ${an.slice(ac + 1)} on ${local} is not defined`);
-          attrs.set(`{${au}}${an.slice(ac + 1)}`, rawAttrs[k + 1]);
+          let clark = scope.attrNames.get(an);
+          if (clark === undefined) {
+            const ap = an.slice(0, ac);
+            const au = ap === "xml" ? XML_NS : scope.uri(ap);
+            if (au === undefined) this.err(`Namespace prefix ${ap} for ${an.slice(ac + 1)} on ${qname} is not defined`);
+            clark = `{${au}}${an.slice(ac + 1)}`;
+            scope.attrNames.set(an, clark);
+          }
+          attrs.set(clark, rawAttrs[k + 1]);
         }
       }
     }
     if (selfClosing) return el;
     // content
+    const children = el._children;
     let pendingText: string | null = null; // text accumulated since the last node
-    const flushText = (nextIsEnd: boolean) => {
-      if (pendingText === null) return;
-      let t = pendingText;
-      pendingText = null;
-      const ch = el._children;
-      if (this.removeBlank && isBlank(t)) {
-        // keep only when it is the whole content of the element (libxml2 keepBlanks=0)
-        if (!(ch.length === 0 && nextIsEnd)) return;
-      }
-      if (ch.length === 0) el._text = (el._text ?? "") + t;
-      else {
-        const last = ch[ch.length - 1];
-        last.tail = (last.tail ?? "") + t;
-      }
-    };
     for (;;) {
       const lt = s.indexOf("<", this.i);
       if (lt < 0) this.err(`Premature end of data in tag ${qname}`);
       if (lt > this.i) {
-        const raw = s.slice(this.i, lt);
-        const t = decodeEntities(raw.indexOf("\r") >= 0 ? raw.replace(/\r\n?/g, "\n") : raw, this.i);
-        pendingText = (pendingText ?? "") + t;
+        let raw = s.slice(this.i, lt);
+        if (raw.indexOf("\r") >= 0) raw = raw.replace(/\r\n?/g, "\n");
+        const t = raw.indexOf("&") >= 0 ? decodeEntities(raw, this.i) : raw;
+        pendingText = pendingText === null ? t : pendingText + t;
       }
       this.i = lt;
       const c1 = s.charCodeAt(lt + 1);
       if (c1 === 47) {
         // end tag
-        flushText(true);
+        if (pendingText !== null) this.addText(el, pendingText, true);
         this.i = lt + 2;
-        const endName = this.name();
-        if (endName !== qname) this.err(`Opening and ending tag mismatch: ${qname} and ${endName}`);
+        if (s.startsWith(qname, this.i) && !isNameChar(s.charCodeAt(this.i + qname.length))) this.i += qname.length;
+        else {
+          const endName = this.name();
+          if (endName !== qname) this.err(`Opening and ending tag mismatch: ${qname} and ${endName}`);
+        }
         this.skipWs();
         if (s.charCodeAt(this.i) !== 62) this.err("expected '>'");
         this.i++;
@@ -777,52 +782,97 @@ class Parser {
       }
       if (c1 === 33) {
         if (s.startsWith("<![CDATA[", lt)) {
-          const end = s.indexOf("]]>", lt);
-          if (end < 0) this.err("unterminated CDATA");
-          // CDATA is never "blank text" to be removed
-          const t = s.slice(lt + 9, end);
-          if (pendingText !== null && this.removeBlank && isBlank(pendingText) && t.length) {
-            // whitespace before CDATA belongs with it
-          }
-          pendingText = (pendingText ?? "") + t;
-          const ch = el._children;
-          // write immediately so blank-removal doesn't drop it
-          const txt = pendingText;
+          const cEnd = s.indexOf("]]>", lt);
+          if (cEnd < 0) this.err("unterminated CDATA");
+          // CDATA is never "blank text" to be removed: write it (with any text before it) now
+          const txt = (pendingText ?? "") + s.slice(lt + 9, cEnd);
           pendingText = null;
-          if (ch.length === 0) el._text = (el._text ?? "") + txt;
-          else ch[ch.length - 1].tail = (ch[ch.length - 1].tail ?? "") + txt;
-          this.i = end + 3;
+          if (children.length === 0) el._text = (el._text ?? "") + txt;
+          else children[children.length - 1].tail = (children[children.length - 1].tail ?? "") + txt;
+          this.i = cEnd + 3;
           continue;
         }
         if (s.startsWith("<!--", lt)) {
-          flushText(false);
-          const end = s.indexOf("-->", lt);
-          if (end < 0) this.err("unterminated comment");
-          const cm = new XmlComment(s.slice(lt + 4, end));
+          if (pendingText !== null) this.addText(el, pendingText, false);
+          pendingText = null;
+          const cEnd = s.indexOf("-->", lt);
+          if (cEnd < 0) this.err("unterminated comment");
+          const cm = new XmlComment(s.slice(lt + 4, cEnd));
           cm._parent = el;
-          el._children.push(cm);
-          this.i = end + 3;
+          children.push(cm);
+          this.i = cEnd + 3;
           continue;
         }
         this.err("unexpected markup");
       }
       if (c1 === 63) {
-        flushText(false);
-        const end = s.indexOf("?>", lt);
-        if (end < 0) this.err("unterminated processing instruction");
-        const body = s.slice(lt + 2, end);
+        if (pendingText !== null) this.addText(el, pendingText, false);
+        pendingText = null;
+        const pEnd = s.indexOf("?>", lt);
+        if (pEnd < 0) this.err("unterminated processing instruction");
+        const body = s.slice(lt + 2, pEnd);
         const sp = body.search(/\s/);
         const pi = new XmlPI(sp < 0 ? body : body.slice(0, sp), sp < 0 ? "" : body.slice(sp + 1).trimStart());
         pi._parent = el;
-        el._children.push(pi);
-        this.i = end + 2;
+        children.push(pi);
+        this.i = pEnd + 2;
         continue;
       }
       // child element
-      flushText(false);
-      const child = this.element(el);
-      el._children.push(child);
+      if (pendingText !== null) this.addText(el, pendingText, false);
+      pendingText = null;
+      children.push(this.element(el, scope));
     }
+  }
+
+  /** Attach text to `el` (as its text or the last child's tail), dropping blank text unless kept. */
+  addText(el: XmlElement, t: string, nextIsEnd: boolean): void {
+    const ch = el._children;
+    if (this.removeBlank && isBlank(t)) {
+      // keep only when it is the whole content of the element (libxml2 keepBlanks=0)
+      if (!(ch.length === 0 && nextIsEnd)) return;
+    }
+    if (ch.length === 0) el._text = el._text === null ? t : el._text + t;
+    else {
+      const last = ch[ch.length - 1];
+      last.tail = last.tail === null ? t : last.tail + t;
+    }
+  }
+}
+
+/** True for characters that can continue an XML name (used to confirm an end-tag name match). */
+function isNameChar(c: number): boolean {
+  return !(c !== c || c === 32 || c === 10 || c === 13 || c === 9 || c === 62 || c === 47 || c === 61);
+}
+
+/**
+ * Namespace scope while parsing: prefix bindings plus caches of resolved element and attribute
+ * names. A child scope is made only where an element declares namespaces.
+ */
+class NsScope {
+  readonly tags = new Map<string, { tag: string; prefix: string | null; cls: ElementClass }>();
+  readonly attrNames = new Map<string, string>();
+
+  constructor(
+    private readonly bindings: Map<string | null, string>,
+  ) {}
+
+  static root(parent: XmlElement | null): NsScope {
+    const m = new Map<string | null, string>();
+    if (parent) for (const [p, u] of [...parent._inScopeDecls()].reverse()) m.set(p, u);
+    return new NsScope(m);
+  }
+
+  child(decls: NsDecl[]): NsScope {
+    const m = new Map(this.bindings);
+    for (const [p, u] of decls) m.set(p, u);
+    return new NsScope(m);
+  }
+
+  uri(prefix: string | null): string | undefined {
+    const u = this.bindings.get(prefix);
+    if (u !== undefined) return u;
+    return prefix === "xml" ? XML_NS : undefined;
   }
 }
 

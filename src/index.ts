@@ -36,6 +36,10 @@ export { CorePropertiesPart } from "./parts/coreprops.js";
 export { RGBColor, ColorFormat } from "./dml/color.js";
 export { FillFormat } from "./dml/fill.js";
 
+// charts (pptx.chart.*)
+export { BubbleChartData, CategoryChartData, ChartData, XyChartData } from "./chart/data.js";
+export { Chart } from "./chart/chart.js";
+
 // stage 1: the OPC package layer
 export { OpcPackage, Part, XmlPart, PartFactory } from "./opc/package.js";
 export { PackURI, PACKAGE_URI, CONTENT_TYPES_URI } from "./opc/packuri.js";

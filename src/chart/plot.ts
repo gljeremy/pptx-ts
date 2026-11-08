@@ -1,5 +1,5 @@
 // Plot-related objects. (`pptx.chart.plot`)
-import { ValueError, KeyError, NotImplementedError } from "../errors.js";
+import { AttributeError, ValueError, KeyError, NotImplementedError } from "../errors.js";
 import { lazy, pyBool, pyGetItem } from "../util.js";
 import { Categories } from "./category.js";
 import { DataLabels } from "./datalabel.js";
@@ -38,6 +38,19 @@ export class _BasePlot {
     });
   }
 
+  /**
+   * The plot element's `c:dLbls` child or null. Some plot element classes (`c:scatterChart`,
+   * `c:area3DChart`) declare no `dLbls`, and python-pptx raises AttributeError for them; this
+   * does the same rather than reading the missing property as "present".
+   */
+  get _dLbls(): any {
+    const dLbls = this._element.dLbls;
+    if (dLbls === undefined) {
+      throw new AttributeError(`'${this._element.constructor.name}' object has no attribute 'dLbls'`);
+    }
+    return dLbls;
+  }
+
   /** The |Chart| object containing this plot. */
   get chart() {
     return this._chart;
@@ -48,7 +61,7 @@ export class _BasePlot {
    * collection of data labels associated with this plot.
    */
   get dataLabels() {
-    const dLbls = this._element.dLbls;
+    const dLbls = this._dLbls;
     if (dLbls === null) {
       throw new ValueError("plot has no data labels, set has_data_labels = True first");
     }
@@ -61,13 +74,13 @@ export class _BasePlot {
    * removes any existing data labels.
    */
   get hasDataLabels() {
-    return this._element.dLbls !== null;
+    return this._dLbls !== null;
   }
 
   set hasDataLabels(value: any) {
     if (pyBool(value) === false) {
       this._element._removeDLbls();
-    } else if (this._element.dLbls === null) {
+    } else if (this._dLbls === null) {
       const dLbls = this._element._addDLbls();
       dLbls.showVal.val = true;
     }

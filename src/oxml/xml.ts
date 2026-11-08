@@ -388,20 +388,33 @@ export class XmlElement implements Iterable<XmlNode> {
   }
 
   /**
-   * Drop declarations whose namespace URI an ancestor already declares, possibly under another
-   * prefix (libxml2's moveNodeToDocument does this, matching by href); the element then uses
-   * the ancestor's prefix.
+   * After a move into a tree: on this element and every element below it, drop declarations
+   * whose namespace URI an ancestor already declares, possibly under another prefix, and use the
+   * ancestor's prefix instead (lxml's moveNodeToDocument, which matches by href).
    */
   _stripRedundantNsDecls(): void {
-    const d = this._nsDecls;
-    if (!d || !this._parent) return;
-    const kept: NsDecl[] = [];
-    for (const [p, u] of d) {
-      const other = this._parent._prefixForUri(u);
-      if (other === undefined) kept.push([p, u]);
-      else if (this._prefix === p) this._prefix = other;
-    }
-    this._nsDecls = kept.length ? kept : null;
+    if (!this._parent) return;
+    // prefixes remapped by a stripped declaration, per element: stripped prefix -> new prefix
+    const walk = (e: XmlElement, remap: Map<string | null, string | null> | null) => {
+      const d = e._nsDecls;
+      if (d) {
+        let kept: NsDecl[] | null = null;
+        for (const [p, u] of d) {
+          const other = e._parent!._prefixForUri(u);
+          if (other === undefined) (kept ??= []).push([p, u]);
+          else {
+            remap = new Map(remap ?? []);
+            remap.set(p, other);
+          }
+        }
+        // a declaration this element keeps shadows any remap of its prefix
+        if (remap && kept) for (const [p] of kept) remap.delete(p);
+        e._nsDecls = kept;
+      }
+      if (remap && remap.has(e._prefix)) e._prefix = remap.get(e._prefix)!;
+      for (const c of e._children) if (c instanceof XmlElement) walk(c, remap);
+    };
+    walk(this, null);
   }
 
   /** In-scope prefix (null = default) bound to `uri`, nearest first; undefined if none. */

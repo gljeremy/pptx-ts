@@ -1,0 +1,14 @@
+{
+  "_doc": "Chart API paths both crosscheck sides read for every chart (python names; the TS side camelCases them).",
+  "chart": ["chart_type", "has_title", "has_legend", "chart_style", "font.size", "font.bold", "font.name"],
+  "chart_title": ["has_text_frame", "text_frame.text"],
+  "legend": ["position", "include_in_layout", "horz_offset", "font.size", "font.italic"],
+  "plot": ["vary_by_categories", "has_data_labels", "gap_width", "overlap", "bubble_scale", "categories.depth", "categories.flattened_labels", "len(categories)", "len(categories.levels)"],
+  "data_labels": ["number_format", "number_format_is_linked", "position", "show_category_name", "show_legend_key", "show_percentage", "show_series_name", "show_value", "font.size"],
+  "series": ["name", "index", "values", "smooth", "invert_if_negative", "marker.style", "marker.size", "format.fill.type", "format.line.width", "len(points)"],
+  "xy_series": ["iter_values()"],
+  "point": ["data_label.has_text_frame", "data_label.position", "marker.style", "format.fill.type"],
+  "axis": ["has_major_gridlines", "has_minor_gridlines", "major_tick_mark", "minor_tick_mark", "tick_label_position", "visible", "reverse_order", "maximum_scale", "minimum_scale", "has_title", "tick_labels.font.size", "tick_labels.number_format", "tick_labels.number_format_is_linked", "tick_labels.offset", "format.line.width"],
+  "value_axis": ["major_unit", "minor_unit", "crosses", "crosses_at"],
+  "axis_title": ["has_text_frame", "text_frame.text"]
+}

@@ -8,7 +8,7 @@
   pre { background: #f4f4f4; padding: 0.75rem; overflow-x: auto; }
 </style>
 <h1>pptx-ts in the browser</h1>
-<p>Builds a deck entirely in this page (no server), then lets you download it. Build the bundle first:
+<p>Builds a deck with text, a shape, a table and a chart entirely in this page (no server), then lets you download it. Build the bundle first:
 <code>npm run build &amp;&amp; npm run demo:build</code>, then serve this folder, e.g. <code>npx http-server demo</code>.</p>
 <p><label>Title <input id="title" value="Hello from pptx-ts"></label></p>
 <p><label>Subtitle <input id="subtitle" value="Built in the browser"></label></p>
@@ -17,7 +17,7 @@
 <script src="pptx.js"></script>
 <script>
   document.getElementById("make").addEventListener("click", () => {
-    const { Presentation, BytesIO, Inches, MSO_SHAPE } = pptx;
+    const { Presentation, BytesIO, Inches, MSO_SHAPE, CategoryChartData, XL_CHART_TYPE, XL_LEGEND_POSITION } = pptx;
     const prs = Presentation();
     const slide = prs.slides.addSlide(prs.slideLayouts.at(0));
     slide.shapes.title.textFrame.text = document.getElementById("title").value;
@@ -26,6 +26,14 @@
     s2.shapes.addShape(MSO_SHAPE.ROUNDED_RECTANGLE, Inches(1), Inches(1), Inches(4), Inches(1)).textFrame.text = "A shape";
     const table = s2.shapes.addTable(3, 3, Inches(1), Inches(2.5), Inches(6), Inches(1.5)).table;
     for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++) table.cell(r, c).text = `r${r} c${c}`;
+    const s3 = prs.slides.addSlide(prs.slideLayouts.at(6));
+    const data = new CategoryChartData();
+    data.categories = ["East", "West", "Midwest"];
+    data.addSeries("Q1 Sales", [19.2, 21.4, 16.7]);
+    data.addSeries("Q2 Sales", [22.3, 28.6, 15.2]);
+    const chart = s3.shapes.addChart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(1), Inches(1), Inches(8), Inches(5), data).chart;
+    chart.hasLegend = true;
+    chart.legend.position = XL_LEGEND_POSITION.BOTTOM;
     const out = new BytesIO();
     prs.save(out);
     const bytes = out.getvalue();

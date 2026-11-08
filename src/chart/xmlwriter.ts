@@ -40,7 +40,7 @@ export class _BaseChartXmlWriter {
   declare _seriesSeq: any;
 
   constructor(chartType: any, seriesSeq: any) {
-    this._chartType = chartType;
+    this._chartType = XL_CHART_TYPE(chartType);
     this._chartData = seriesSeq;
     this._seriesSeq = [...seriesSeq];
   }

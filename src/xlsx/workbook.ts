@@ -68,7 +68,6 @@ type Cell =
 
 /** A worksheet: a sparse table of cells plus column settings. */
 export class Worksheet {
-  readonly name: string;
   readonly _table = new Map<number, Map<number, Cell>>();
   readonly _colInfo = new Map<number, { width: number | null; format: Format | null }>();
   _dimRowMin: number | null = null;
@@ -76,12 +75,7 @@ export class Worksheet {
   _dimColMin: number | null = null;
   _dimColMax: number | null = null;
 
-  constructor(
-    private readonly _workbook: Workbook,
-    name: string,
-  ) {
-    this.name = name;
-  }
+  constructor(private readonly _workbook: Workbook) {}
 
   /**
    * Write `token` at (`row`, `col`) by its type, as XlsxWriter's `write()`: null or "" is a
@@ -164,13 +158,13 @@ export class Worksheet {
     return 0;
   }
 
-  /** xl/worksheets/sheetN.xml */
-  _xml(selected: boolean): string {
+  /** xl/worksheets/sheet1.xml */
+  _xml(): string {
     const parts: string[] = [
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n',
       '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">',
       `<dimension ref="${this._dimensionRef()}"/>`,
-      `<sheetViews><sheetView ${selected ? 'tabSelected="1" ' : ""}workbookViewId="0"/></sheetViews>`,
+      '<sheetViews><sheetView tabSelected="1" workbookViewId="0"/></sheetViews>',
       '<sheetFormatPr defaultRowHeight="15"/>',
     ];
     this._writeCols(parts);
@@ -309,7 +303,7 @@ export class Workbook {
   readonly _formats: Format[] = [];
   readonly _xfFormatIndices = new Map<string, number>();
   readonly _strTable = new SharedStrings();
-  readonly _worksheets: Worksheet[] = [];
+  readonly _worksheet = new Worksheet(this);
   /** creation time written to docProps/core.xml (XlsxWriter uses the current time) */
   created: Date = new Date();
   _closed = false;
@@ -321,10 +315,8 @@ export class Workbook {
     this._formats.push(new Format(this, { xf_index: 0 }));
   }
 
-  addWorksheet(name?: string): Worksheet {
-    const sheet = new Worksheet(this, name ?? `Sheet${this._worksheets.length + 1}`);
-    this._worksheets.push(sheet);
-    return sheet;
+  addWorksheet(): Worksheet {
+    return this._worksheet;
   }
 
   addFormat(properties: { num_format?: string | number } = {}): Format {
@@ -337,15 +329,14 @@ export class Workbook {
   close(): void {
     if (this._closed) return;
     this._closed = true;
-    if (this._worksheets.length === 0) this.addWorksheet();
     const files: Record<string, string> = {};
     const hasStrings = this._strTable.count > 0;
     // worksheets first: writing their cells assigns the style indexes the styles part lists
-    const sheets = this._worksheets.map((ws, i) => ws._xml(i === 0));
+    const sheet = this._worksheet._xml();
     files["[Content_Types].xml"] = this._contentTypesXml(hasStrings);
     files["_rels/.rels"] = ROOT_RELS_XML;
     files["xl/_rels/workbook.xml.rels"] = this._workbookRelsXml(hasStrings);
-    sheets.forEach((xml, i) => (files[`xl/worksheets/sheet${i + 1}.xml`] = xml));
+    files["xl/worksheets/sheet1.xml"] = sheet;
     files["xl/workbook.xml"] = this._workbookXml();
     if (hasStrings) files["xl/sharedStrings.xml"] = this._strTable._xml();
     files["xl/styles.xml"] = this._stylesXml();
@@ -359,7 +350,6 @@ export class Workbook {
 
   _contentTypesXml(hasStrings: boolean): string {
     const ct = "application/vnd.openxmlformats-officedocument";
-    const sheets = this._worksheets.map((_, i) => `<Override PartName="/xl/worksheets/sheet${i + 1}.xml" ContentType="${ct}.spreadsheetml.worksheet+xml"/>`).join("");
     return (
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
       '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
@@ -368,7 +358,7 @@ export class Workbook {
       `<Override PartName="/xl/styles.xml" ContentType="${ct}.spreadsheetml.styles+xml"/>` +
       `<Override PartName="/xl/theme/theme1.xml" ContentType="${ct}.theme+xml"/>` +
       `<Override PartName="/xl/workbook.xml" ContentType="${ct}.spreadsheetml.sheet.main+xml"/>` +
-      sheets +
+      `<Override PartName="/xl/worksheets/sheet1.xml" ContentType="${ct}.spreadsheetml.worksheet+xml"/>` +
       (hasStrings ? `<Override PartName="/xl/sharedStrings.xml" ContentType="${ct}.spreadsheetml.sharedStrings+xml"/>` : "") +
       "</Types>"
     );
@@ -376,22 +366,20 @@ export class Workbook {
 
   _workbookRelsXml(hasStrings: boolean): string {
     const rt = "http://schemas.openxmlformats.org/officeDocument/2006/relationships";
-    const n = this._worksheets.length;
     let xml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">';
-    this._worksheets.forEach((_, i) => (xml += `<Relationship Id="rId${i + 1}" Type="${rt}/worksheet" Target="worksheets/sheet${i + 1}.xml"/>`));
-    xml += `<Relationship Id="rId${n + 1}" Type="${rt}/theme" Target="theme/theme1.xml"/>`;
-    xml += `<Relationship Id="rId${n + 2}" Type="${rt}/styles" Target="styles.xml"/>`;
-    if (hasStrings) xml += `<Relationship Id="rId${n + 3}" Type="${rt}/sharedStrings" Target="sharedStrings.xml"/>`;
+    xml += `<Relationship Id="rId1" Type="${rt}/worksheet" Target="worksheets/sheet1.xml"/>`;
+    xml += `<Relationship Id="rId2" Type="${rt}/theme" Target="theme/theme1.xml"/>`;
+    xml += `<Relationship Id="rId3" Type="${rt}/styles" Target="styles.xml"/>`;
+    if (hasStrings) xml += `<Relationship Id="rId4" Type="${rt}/sharedStrings" Target="sharedStrings.xml"/>`;
     return xml + "</Relationships>";
   }
 
   _workbookXml(): string {
-    const sheets = this._worksheets.map((ws, i) => `<sheet name="${escapeAttr(ws.name)}" sheetId="${i + 1}" r:id="rId${i + 1}"/>`).join("");
     return (
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
       '<fileVersion appName="xl" lastEdited="4" lowestEdited="4" rupBuild="4505"/><workbookPr defaultThemeVersion="124226"/>' +
       '<bookViews><workbookView xWindow="240" yWindow="15" windowWidth="16095" windowHeight="9660"/></bookViews>' +
-      `<sheets>${sheets}</sheets><calcPr calcId="124519" fullCalcOnLoad="1"/></workbook>`
+      '<sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="124519" fullCalcOnLoad="1"/></workbook>'
     );
   }
 
@@ -448,13 +436,11 @@ export class Workbook {
   }
 
   _appXml(): string {
-    const n = this._worksheets.length;
-    const names = this._worksheets.map((ws) => `<vt:lpstr>${escapeData(ws.name)}</vt:lpstr>`).join("");
     return (
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n<Properties xmlns="http://schemas.openxmlformats.org/officeDocument/2006/extended-properties" xmlns:vt="http://schemas.openxmlformats.org/officeDocument/2006/docPropsVTypes">' +
       "<Application>Microsoft Excel</Application><DocSecurity>0</DocSecurity><ScaleCrop>false</ScaleCrop>" +
-      `<HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>${n}</vt:i4></vt:variant></vt:vector></HeadingPairs>` +
-      `<TitlesOfParts><vt:vector size="${n}" baseType="lpstr">${names}</vt:vector></TitlesOfParts>` +
+      '<HeadingPairs><vt:vector size="2" baseType="variant"><vt:variant><vt:lpstr>Worksheets</vt:lpstr></vt:variant><vt:variant><vt:i4>1</vt:i4></vt:variant></vt:vector></HeadingPairs>' +
+      '<TitlesOfParts><vt:vector size="1" baseType="lpstr"><vt:lpstr>Sheet1</vt:lpstr></vt:vector></TitlesOfParts>' +
       "<Company></Company><LinksUpToDate>false</LinksUpToDate><SharedDoc>false</SharedDoc><HyperlinksChanged>false</HyperlinksChanged><AppVersion>12.0000</AppVersion></Properties>"
     );
   }
@@ -521,15 +507,37 @@ export function formatG16(x: number): string {
 /** python `"%.{p}G" % x` (`"%g"` when `p` is 6): exponent form outside 1e-4 <= |x| < 10^p. */
 export function formatG(x: number, p = 6): string {
   if (x === 0) return Object.is(x, -0) ? "-0" : "0";
-  const exp = Math.floor(Math.log10(Math.abs(Number(x.toPrecision(p)))));
-  if (exp < -4 || exp >= p) {
-    const [m, e] = x.toExponential(p - 1).split("e");
-    const mant = m.includes(".") ? m.replace(/\.?0+$/, "") : m;
-    const n = Number(e);
-    return `${mant}E${n < 0 ? "-" : "+"}${String(Math.abs(n)).padStart(2, "0")}`;
+  const magnitude = Math.abs(x);
+  let exp = Number(magnitude.toExponential().split("e")[1]);
+  const bits = new DataView(new ArrayBuffer(8));
+  bits.setFloat64(0, magnitude);
+  const hi = bits.getUint32(0);
+  const binaryExp = (hi >>> 20) & 0x7ff;
+  let numerator = (BigInt(hi & 0xfffff) << 32n) | BigInt(bits.getUint32(4));
+  if (binaryExp !== 0) numerator |= 1n << 52n;
+  const shift = binaryExp === 0 ? -1074 : binaryExp - 1075;
+  let denominator = 1n;
+  if (shift >= 0) numerator <<= BigInt(shift);
+  else denominator <<= BigInt(-shift);
+  const scale = p - 1 - exp;
+  if (scale >= 0) numerator *= 10n ** BigInt(scale);
+  else denominator *= 10n ** BigInt(-scale);
+  let rounded = numerator / denominator;
+  const remainder = (numerator % denominator) * 2n;
+  if (remainder > denominator || (remainder === denominator && rounded % 2n !== 0n)) rounded += 1n;
+  let digits = rounded.toString();
+  if (digits.length > p) {
+    digits = digits.slice(0, -1);
+    exp += 1;
   }
-  const s = x.toFixed(Math.max(0, p - 1 - exp));
-  return s.includes(".") ? s.replace(/\.?0+$/, "") : s;
+  const sign = x < 0 ? "-" : "";
+  if (exp < -4 || exp >= p) {
+    const mant = `${digits[0]}.${digits.slice(1)}`.replace(/\.?0+$/, "").replace(/\.$/, "");
+    return `${sign}${mant}E${exp < 0 ? "-" : "+"}${String(Math.abs(exp)).padStart(2, "0")}`;
+  }
+  const point = exp + 1;
+  const s = point <= 0 ? `0.${"0".repeat(-point)}${digits}` : `${digits.slice(0, point)}.${digits.slice(point)}`;
+  return sign + s.replace(/\.?0+$/, "").replace(/\.$/, "");
 }
 
 function escapeData(s: string): string {

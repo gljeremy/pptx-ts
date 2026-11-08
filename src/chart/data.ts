@@ -654,7 +654,8 @@ export class Category {
     let excelDayNumber;
     const label: Date = this._label;
     // the date part only (a datetime's time of day is dropped), naive dates held as UTC
-    const date_ = Date.UTC(label.getUTCFullYear(), label.getUTCMonth(), label.getUTCDate());
+    const date = new Date(label.getTime());
+    const date_ = date.setUTCHours(0, 0, 0, 0);
     const epoch = date1904 ? Date.UTC(1904, 0, 1) : Date.UTC(1899, 11, 31);
     excelDayNumber = Math.round((date_ - epoch) / 86400000);
     if ((!date1904 && excelDayNumber > 59)) {

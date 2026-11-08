@@ -18,7 +18,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "demo:build": "esbuild dist/index.js --bundle --platform=browser --format=iife --global-name=pptx --minify --outfile=demo/pptx.js"
   },
   "dependencies": {
     "fflate": "0.8.2"
@@ -27,5 +28,8 @@
     "@types/node": "22.10.2",
     "typescript": "5.6.3",
     "vitest": "2.1.8"
+  },
+  "engines": {
+    "node": ">=20.16"
   }
 }

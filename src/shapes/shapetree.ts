@@ -747,20 +747,28 @@ export function BaseShapeFactory(shapeElm: ShapeElement, parent: ProvidesPart): 
     }
     return new Picture(shapeElm, parent);
   }
-  const shapeCls = shapeClsByTag().get(tag) ?? BaseShape;
+  const shapeCls = shapeClsFor(tag) ?? BaseShape;
   return new shapeCls(shapeElm as any, parent);
 }
 
 type ShapeCls = new (elm: any, parent: ProvidesPart) => BaseShape;
-let _shapeClsByTag: Map<string, ShapeCls> | null = null;
-/** {clark tag: shape class}, built on first use (the shape modules import this one). */
-function shapeClsByTag(): Map<string, ShapeCls> {
-  return (_shapeClsByTag ??= new Map<string, ShapeCls>([
-    [qn("p:cxnSp"), Connector],
-    [qn("p:grpSp"), GroupShape],
-    [qn("p:sp"), Shape],
-    [qn("p:graphicFrame"), GraphicFrame],
-  ]));
+const TAG_CXNSP = qn("p:cxnSp");
+const TAG_GRPSP = qn("p:grpSp");
+const TAG_SP = qn("p:sp");
+const TAG_GRAPHICFRAME = qn("p:graphicFrame");
+/** The shape class for a clark tag (looked up on each call, like python's dict literal). */
+function shapeClsFor(tag: string): ShapeCls | undefined {
+  switch (tag) {
+    case TAG_CXNSP:
+      return Connector;
+    case TAG_GRPSP:
+      return GroupShape;
+    case TAG_SP:
+      return Shape;
+    case TAG_GRAPHICFRAME:
+      return GraphicFrame;
+  }
+  return undefined;
 }
 
 /** Return appropriate shape object for `shape_elm` on a slide layout. */

@@ -4,11 +4,13 @@ A TypeScript port of [python-pptx](https://github.com/scanny/python-pptx) for cr
 reading and updating PowerPoint (.pptx) files in browsers and Node, with no server and no
 Python.
 
-**Status: stage 2 of 6.** You can open any deck, or start from the built-in template, add
-slides from its layouts, read slides, layouts, masters, notes and core properties, and save.
-Decks built with pptx-ts are byte-identical to the same steps in python-pptx. The shape, text,
-table and chart APIs are ported with this stage but are covered by upstream's tests from
-stages 3–5; see [PARITY.md](PARITY.md) and the stage issues on GitHub.
+**Status: stages 1–4 of 6.** Everything except charts: open any deck or start from the
+built-in template; slides, layouts, masters, notes and core properties; shapes, pictures,
+movies, connectors, freeforms, groups, placeholders, fills, lines, colors, hyperlinks and click
+actions; text frames with fonts and paragraphs, `fitText()`; tables. Decks built with pptx-ts
+are byte-identical to the same steps in python-pptx, and it runs in browsers as well as Node
+([demo](demo/index.html)). Charts are stage 5; see [PARITY.md](PARITY.md) and the stage issues
+on GitHub.
 
 ```ts
 import { Presentation, BytesIO } from "pptx-ts";
@@ -86,18 +88,28 @@ upstream's structure and docstrings) and are then reviewed and corrected by hand
 
 ## Performance
 
-Best of 5 on `cht-charts.pptx`, Node 22 vs CPython 3.13 + lxml 5.3
-(`bench/bench_prs.*`, `bench/bench_opc.*`):
+Best of 5 (best of 3 for the 1000-shape case), Node 22 vs CPython 3.13 + lxml 5.3, on
+`cht-charts.pptx` from python-pptx's test files (`bench/bench_prs.*`, `bench/bench_opc.*`):
 
 | Workload | python-pptx | pptx-ts |
 | --- | ---: | ---: |
-| open + save presentation (XML parts parsed) | 10.8 ms | 15.4 ms |
-| build a 100-slide deck from the default template | 297.5 ms | 120.4 ms |
-| open + save package (OPC only) | 10.8 ms | 10.6 ms |
-| parse + serialize 12 MB of part XML | 24.4 ms | 50.8 ms |
+| build a 100-slide deck from the default template | 297.5 ms | 120.9 ms |
+| add 1000 text boxes with text to a slide, save | 309.9 ms | 150.5 ms |
+| open + save a presentation (all XML parts parsed) | 10.9 ms | 15.2 ms |
+| parse + serialize the deck's XML parts 20 times | 24.3 ms | 46.2 ms |
 
-The pure-JS XML parser runs at about half of lxml's C speed (tracked in the performance
-issue); everything above the XML layer is faster than python-pptx.
+Everything above the XML layer is about twice as fast as python-pptx. The XML parser itself is
+pure JS and runs at about half the speed of lxml's C parser, so opening a deck is a few
+milliseconds slower.
+
+### Why not WebAssembly?
+
+`bench/bench_scan.mjs` splits XML parsing into the part a WebAssembly parser could take over
+(decoding and scanning the text: 22% of parse time) and building the element tree (78%). The
+tree is JS objects with per-tag classes that the rest of the library works on, so it has to be
+built in JS either way, and a WASM parser would add the cost of passing every tag and
+attribute string across the boundary. At best it would save about 1 ms per large deck, while
+adding an asynchronous load step and a binary to ship. The JS engine is the better trade-off.
 
 ## Development
 
@@ -111,4 +123,10 @@ py -I scripts/gen_constants.py ../python-pptx src/opc/constants.ts
 python scripts/gen_enums.py src/enum                            # python-pptx importable
 python scripts/gen_spec.py src/spec.ts
 python scripts/image_golden.py test/fixtures/images_pillow.json test/fixtures/images test/test_files
+python scripts/text_golden.py test/test_files/calibriz.ttf test/fixtures/text_golden.json
+python scripts/gen_unitdata.py ../python-pptx test/oxml/unitdata
+npm run demo:build                                              # demo/pptx.js for demo/index.html
 ```
+
+CI (`.github/workflows/ci.yml`) runs typecheck, tests, build and a browser bundle on Node 20
+and 22, Linux and Windows.

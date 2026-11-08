@@ -3,12 +3,11 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as $py from "../pyshim.js";
-import { $append, $assert, $assertEqual, $b, $call, $is, $isinstance, $kw, $list, $open, $read, $t1, $truthy, call, classMock, initializerMock, instanceMock, methodMock, pytestClass } from "../pyshim.js";
+import { $append, $assert, $assertEqual, $b, $call, $cm2, $enter, $exit, $is, $isinstance, $kw, $list, $open, $read, $t1, $truthy, call, classMock, initializerMock, instanceMock, methodMock, pytestClass } from "../pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-// pptx.chart.data is ported in stage 5; the test only needs a class to mock
-class ChartData { xmlBytes(_chartType: any): Uint8Array { return new Uint8Array(); } get xlsxBlob(): Uint8Array { return new Uint8Array(); } }
+import { ChartData as ChartData$imported } from "../stage5_standins.js";
 import { XL_CHART_TYPE as XCT$imported } from "../../src/enum/chart.js";
 import { PROG_ID as PROG_ID$imported } from "../../src/enum/shapes.js";
 import { Video as Video$imported } from "../../src/media.js";
@@ -28,6 +27,7 @@ import { NotesMaster as NotesMaster$imported, NotesSlide as NotesSlide$imported,
 import { element } from "../unitutil/cxml.js";
 import { absjoin, testFileDir } from "../unitutil/file.js";
 // python binds imported names at import time; patches made later don't change them
+const ChartData = ChartData$imported;
 const XCT = XCT$imported;
 const PROG_ID = PROG_ID$imported;
 const Video = Video$imported;
@@ -404,8 +404,13 @@ const DescribeSlidePart: any = {
         let expected_xml: any, f: any, path: any, sld: any;
         path = absjoin(testFileDir, "minimal_slide.xml");
         sld = CT_Slide.new();
-        f = $open(path, "r");
-        expected_xml = $read(f);
+        const $cm2 = $open(path, "r");
+        f = $enter($cm2);
+        try {
+          expected_xml = $read(f);
+        } finally {
+          $exit($cm2);
+        }
         $assertEqual(sld.xml, expected_xml);
       } },
     { name: "it_gets_its_notes_slide_to_help", args: ["notes_slide_fixture"], fn: (self: any, notes_slide_fixture: any): any => {

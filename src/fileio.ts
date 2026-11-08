@@ -4,7 +4,7 @@ import { FileNotFoundError } from "./errors.js";
 
 /** An object with a python-style `read()` (and optionally `seek()`), e.g. `BytesIO`. */
 export interface ReadableFile {
-  read(): Uint8Array;
+  read(size?: number): Uint8Array;
   seek?(pos: number): unknown;
 }
 
@@ -49,6 +49,9 @@ export class BytesIO implements ReadableFile, WritableFile {
     if (need > this.len) this.len = need;
     return b.length;
   }
+
+  /** No-op close (python `BytesIO.close()`; the buffer stays readable here). */
+  close(): void {}
 
   seek(pos: number, whence = 0): number {
     this.pos = whence === 0 ? pos : whence === 1 ? this.pos + pos : this.len + pos;

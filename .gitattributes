@@ -1,2 +1,3 @@
 test/test_files/** -text
 templates/** -text
+test/fixtures/** -text

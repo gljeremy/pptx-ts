@@ -860,17 +860,24 @@ export function functionMock(request: FixtureRequest, qFunctionName: string, kwa
 export function initializerMock(request: FixtureRequest, cls: any, kwargs?: any): any {
   const m = makeMock({ name: "__init__", sigFn: cls });
   const st = m._mockState as MockState;
-  st.sig = [{ name: "self" }, ...(signatureOf(cls) ?? [])];
+  // a class with no __init__ of its own anywhere up its chain has python's object.__init__,
+  // whose autospec mock doesn't record `self`
+  let hasInit = false;
+  for (let c = cls; typeof c === "function" && c !== Function.prototype; c = Object.getPrototypeOf(c)) {
+    if (/\bconstructor\s*\(/.test(Function.prototype.toString.call(c))) hasInit = true;
+  }
+  st.sig = hasInit ? [{ name: "self" }, ...(signatureOf(cls) ?? [])] : [];
   applyKwargs(m, kwargs);
+  const record = (self: any, args: any[]) => (hasInit ? m(self, ...args) : m(...args));
   const proxyCls = new Proxy(cls, {
     construct(target, args, newTarget) {
       const self = Object.create((newTarget === proxyCls ? target : newTarget).prototype);
-      m(self, ...args);
+      record(self, args);
       return self;
     },
     apply(target, _this, args) {
       const self = Object.create(target.prototype);
-      m(self, ...args);
+      record(self, args);
       return self;
     },
   });

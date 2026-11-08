@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as $py from "../pyshim.js";
-import { $assert, $assertEqual, $b, $call, $is, $isinstance, $kw, $list, $open, $read, BytesIO, classMock, initializerMock, instanceMock, methodMock, propertyMock, pytestClass } from "../pyshim.js";
+import { $assert, $assertEqual, $b, $call, $cm1, $cm2, $cm3, $cm4, $cm5, $enter, $exit, $is, $isinstance, $kw, $list, $open, $read, BytesIO, classMock, initializerMock, instanceMock, methodMock, propertyMock, pytestClass } from "../pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
@@ -56,15 +56,25 @@ const DescribeImagePart: any = {
       } },
     { name: "it_can_scale_its_dimensions", args: ["width", "height", "expected_width", "expected_height"], parametrize: [{ names: ["width", "height", "expected_width", "expected_height"], values: [[null, null, $call(Emu, 2590800), $call(Emu, 2590800)], [1000, null, 1000, 1000], [null, 3000, 3000, 3000], [3337, 9999, 3337, 9999]] }], fn: (self: any, width: any, height: any, expected_width: any, expected_height: any): any => {
         let blob: any, f: any, image_part: any;
-        f = $open(test_image_path, "rb");
-        blob = $read(f);
+        const $cm1 = $open(test_image_path, "rb");
+        f = $enter($cm1);
+        try {
+          blob = $read(f);
+        } finally {
+          $exit($cm1);
+        }
         image_part = $call(ImagePart, null, null, null, blob);
         $assertEqual(image_part.scale(width, height), [expected_width, expected_height]);
       } },
     { name: "it_knows_its_pixel_dimensions_to_help", args: [], fn: (self: any): any => {
         let blob: any, f: any, image_part: any;
-        f = $open(test_image_path, "rb");
-        blob = $read(f);
+        const $cm2 = $open(test_image_path, "rb");
+        f = $enter($cm2);
+        try {
+          blob = $read(f);
+        } finally {
+          $exit($cm2);
+        }
         image_part = $call(ImagePart, null, null, null, blob);
         $assertEqual(image_part._pxSize, [204, 204]);
       } },
@@ -109,16 +119,26 @@ const DescribeImage: any = {
       } },
     from_stream_fixture: { args: ["from_blob_", "image_"], fn: (self: any, from_blob_: any, image_: any): any => {
         let blob: any, f: any, image_file: any;
-        f = $open(test_image_path, "rb");
-        blob = $read(f);
-        image_file = new BytesIO(blob);
+        const $cm4 = $open(test_image_path, "rb");
+        f = $enter($cm4);
+        try {
+          blob = $read(f);
+          image_file = new BytesIO(blob);
+        } finally {
+          $exit($cm4);
+        }
         from_blob_.returnValue = image_;
         return [image_file, blob, image_];
       } },
     pil_fixture: { args: [], fn: (self: any): any => {
         let blob: any, dpi: any, f: any, format: any, image: any, size: any;
-        f = $open(test_image_path, "rb");
-        blob = $read(f);
+        const $cm5 = $open(test_image_path, "rb");
+        f = $enter($cm5);
+        try {
+          blob = $read(f);
+        } finally {
+          $exit($cm5);
+        }
         image = $call(Image, blob, null);
         size = [204, 204];
         format = "JPEG";
@@ -146,8 +166,13 @@ const DescribeImage: any = {
   tests: [
     { name: "it_can_construct_from_a_path", args: ["from_blob_", "image_"], fn: (self: any, from_blob_: any, image_: any): any => {
         let blob: any, f: any, image: any;
-        f = $open(test_image_path, "rb");
-        blob = $read(f);
+        const $cm3 = $open(test_image_path, "rb");
+        f = $enter($cm3);
+        try {
+          blob = $read(f);
+        } finally {
+          $exit($cm3);
+        }
         from_blob_.returnValue = image_;
         image = Image.fromFile(test_image_path);
         Image.fromBlob.assertCalledOnceWith(blob, "python-icon.jpeg");

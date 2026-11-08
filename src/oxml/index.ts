@@ -21,7 +21,9 @@ import { CT_Table, CT_TableCell, CT_TableCellProperties, CT_TableCol, CT_TableGr
 import { CT_RegularTextRun, CT_TextBody, CT_TextBodyProperties, CT_TextCharacterProperties, CT_TextField, CT_TextFont, CT_TextLineBreak, CT_TextNormalAutofit, CT_TextParagraph, CT_TextParagraphProperties, CT_TextSpacing, CT_TextSpacingPercent, CT_TextSpacingPoint } from "./text.js";
 import { CT_OfficeStyleSheet } from "./theme.js";
 
-// the chart (c:*) element classes are registered in stage 5
+// the chart (c:*) element classes are registered in stage 5; c:chart is needed for graphic frames
+import { CT_Chart } from "./chart/chart.js";
+registerElementCls("c:chart", CT_Chart);
 registerElementCls("a:hlinkClick", CT_Hyperlink);
 registerElementCls("a:hlinkHover", CT_Hyperlink);
 registerElementCls("cp:coreProperties", CT_CoreProperties);

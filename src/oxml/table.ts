@@ -109,13 +109,13 @@ export class CT_Table extends BaseOxmlElement {
       if (col === (cols - 1)) {
         colwidth = (width - ((cols - 1) * colwidth));
       }
-      tbl.tblGrid.addGridCol({ width: Emu(colwidth) });
+      tbl.tblGrid.addGridCol(Emu(colwidth));
     }
     for (let row = 0; row < rows; row++) {
       if (row === (rows - 1)) {
         rowheight = (height - ((rows - 1) * rowheight));
       }
-      const tr = tbl.addTr({ height: Emu(rowheight) });
+      const tr = tbl.addTr(Emu(rowheight));
       for (let col = 0; col < cols; col++) {
         tr.addTc();
       }

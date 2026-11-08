@@ -1,6 +1,6 @@
 // lxml custom element classes for picture-related XML elements. (`pptx.oxml.shapes.picture`)
 import { defineChildren } from "../xmlchemy.js";
-import { pyPercent } from "../../util.js";
+import { pyPercent, xmlEscape } from "../../util.js";
 import { parseXml } from "../parser.js";
 import { nsdecls } from "../ns.js";
 import { BaseShapeElement } from "./shared.js";
@@ -67,7 +67,7 @@ export class CT_Picture extends BaseShapeElement {
 
   /** Return new `<p:pic>` element tree configured with supplied parameters. */
   static newPic(shapeId: any, name: any, desc: any, rId: any, x: any, y: any, cx: any, cy: any) {
-    return parseXml(pyPercent(this._picTmpl(), [shapeId, name, escape(desc), rId, x, y, cx, cy]));
+    return parseXml(pyPercent(this._picTmpl(), [shapeId, name, xmlEscape(desc), rId, x, y, cx, cy]));
   }
 
   /** Return a new `p:pic` populated with the specified video. */

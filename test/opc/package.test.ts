@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as $py from "../pyshim.js";
-import { $assert, $assertEqual, $b, $call, $collections, $d, $dict, $dictget, $enumerate, $eq, $get, $in, $is, $isinstance, $iter, $itertools, $kw, $len, $list, $m, $mod, $open, $raises, $range, $read, $remove, $set, $set_, $slice, $str, $truthy, $values, ANY, BytesIO, call, classMock, functionMock, initializerMock, instanceMock, methodMock, propertyMock, pytestClass } from "../pyshim.js";
+import { $assert, $assertEqual, $b, $call, $cm1, $collections, $d, $dict, $dictget, $enter, $enumerate, $eq, $exit, $get, $in, $is, $isinstance, $iter, $itertools, $kw, $len, $list, $m, $mod, $open, $raises, $range, $read, $remove, $set, $set_, $slice, $str, $truthy, $values, ANY, BytesIO, call, classMock, functionMock, initializerMock, instanceMock, methodMock, propertyMock, pytestClass } from "../pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
@@ -304,8 +304,13 @@ const DescribePart: any = {
     { name: "it_can_load_a_blob_from_a_file_path_to_help", args: [], fn: (self: any): any => {
         let f: any, file_bytes: any, part: any, path: any;
         path = absjoin(testFileDir, "minimal.pptx");
-        f = $open(path, "rb");
-        file_bytes = $read(f);
+        const $cm1 = $open(path, "rb");
+        f = $enter($cm1);
+        try {
+          file_bytes = $read(f);
+        } finally {
+          $exit($cm1);
+        }
         part = $call(Part, null, null, null, null);
         $assertEqual(part._blobFromFile(path), file_bytes);
       } },

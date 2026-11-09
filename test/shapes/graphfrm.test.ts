@@ -7,7 +7,7 @@ import { $assert, $assertEqual, $b, $call, $is, $kw, $mod, $raises, $str, $truth
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-import { Chart as Chart$imported } from "../stage5_standins.js";
+import { Chart as Chart$imported } from "../../src/chart/chart.js";
 import { MSO_SHAPE_TYPE as MSO_SHAPE_TYPE$imported } from "../../src/enum/shapes.js";
 import { ChartPart as ChartPart$imported } from "../../src/parts/chart.js";
 import { EmbeddedPackagePart as EmbeddedPackagePart$imported } from "../../src/parts/embeddedpackage.js";

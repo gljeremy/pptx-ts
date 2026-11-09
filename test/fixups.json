@@ -55,13 +55,6 @@
       "pptx-ts opens the bundled default template from memory (works in browsers, and templates/ is not in the npm package) rather than from its file path"
     ]
   ],
-  "test/parts/slide.test.ts": [
-    [
-      "\"../../src/chart/data.js\"",
-      "\"../stage5_standins.js\"",
-      "pptx.chart arrives in stage 5 (gljeremy/pptx-ts#5); the test only mocks this class (see test/stage5_standins.ts)"
-    ]
-  ],
   "test/action.test.ts": [
     [
       "$call(call, url, RT.HYPERLINK, $kw({is_external: true}))",
@@ -70,11 +63,6 @@
     ]
   ],
   "test/shapes/placeholder.test.ts": [
-    [
-      "\"../../src/chart/data.js\"",
-      "\"../stage5_standins.js\"",
-      "pptx.chart arrives in stage 5 (gljeremy/pptx-ts#5); the test only mocks this class (see test/stage5_standins.ts)"
-    ],
     [
       "layout_.placeholders.get.assertCalledOnceWith($kw({idx: idx}));",
       "layout_.placeholders.get.assertCalledOnceWith(idx);",
@@ -87,11 +75,6 @@
     ]
   ],
   "test/shapes/shapetree.test.ts": [
-    [
-      "\"../../src/chart/data.js\"",
-      "\"../stage5_standins.js\"",
-      "pptx.chart arrives in stage 5 (gljeremy/pptx-ts#5); the test only mocks this class (see test/stage5_standins.ts)"
-    ],
     [
       "classMock(request, \"pptx.shapes.shapetree.io.BytesIO\");",
       "classMock(request, \"pptx.fileio.BytesIO\");",
@@ -111,13 +94,6 @@
       "import * as $py from \"../pyshim.js\";",
       "import * as $py from \"../pyshim.js\";\nimport { $eq } from \"../pyshim.js\";\nimport { templateBytes } from \"../../src/templates/index.js\";",
       "helpers for the icon fixup above"
-    ]
-  ],
-  "test/shapes/graphfrm.test.ts": [
-    [
-      "\"../../src/chart/chart.js\"",
-      "\"../stage5_standins.js\"",
-      "pptx.chart arrives in stage 5 (gljeremy/pptx-ts#5); the test only mocks this class (see test/stage5_standins.ts)"
     ]
   ],
   "test/shapes/autoshape.test.ts": [
@@ -149,6 +125,25 @@
       "@skip",
       "it_can_construct_from_a_path",
       "patches python's builtin open(); _Stream.open() reads the file through pptx-ts's fileio"
+    ]
+  ],
+  "test/chart/xmlwriter.test.ts": [
+    [
+      "$assertEqual(xml_writer.xml, snippetText(\"2x5-radar\"));",
+      "$assertEqual(xml_writer.xml, snippetText(\"2x5-radar\").replace(/<c:v>(-?\\d+)\\.0<\\/c:v>/g, \"<c:v>$1</c:v>\"));",
+      "JS has one number type, so a python float like 11.0 is the number 11 and is written <c:v>11</c:v>; compare against the snippet with integral floats written as ints (see PARITY.md)"
+    ],
+    [
+      "    { name: \"it_can_generate_xml_for_bubble_charts\", args: [\"xml_fixture\"], fn: (self: any, xml_fixture: any): any => {\n        let expected_xml: any, xml_writer: any;\n        [xml_writer, expected_xml] = $list(xml_fixture);\n        $assertEqual(xml_writer.xml, expected_xml);",
+      "    { name: \"it_can_generate_xml_for_bubble_charts\", args: [\"xml_fixture\"], fn: (self: any, xml_fixture: any): any => {\n        let expected_xml: any, xml_writer: any;\n        [xml_writer, expected_xml] = $list(xml_fixture);\n        $assertEqual(xml_writer.xml, expected_xml.replace(/<c:v>(-?\\d+)\\.0<\\/c:v>/g, \"<c:v>$1</c:v>\"));",
+      "JS has one number type, so a python float like 11.0 is the number 11 and is written <c:v>11</c:v>; compare against the snippet with integral floats written as ints (see PARITY.md)"
+    ]
+  ],
+  "test/chart/xlsx.test.ts": [
+    [
+      "classMock(request, \"pptx.chart.xlsx.io.BytesIO\");",
+      "classMock(request, \"pptx.fileio.BytesIO\");",
+      "the TS module imports BytesIO from pptx-ts's fileio rather than using io.BytesIO; patch it there"
     ]
   ]
 }

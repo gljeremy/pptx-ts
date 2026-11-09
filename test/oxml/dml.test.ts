@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as $py from "../pyshim.js";
-import { $assert, $assertEqual, $is, $isinstance, pytestClass } from "../pyshim.js";
+import { $append, $assert, $assertEqual, $is, $isinstance, pytestClass } from "../pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
@@ -37,7 +37,7 @@ const Describe_BaseColorElement: any = {
     schemeClr_with_lumMod: { args: ["lumMod"], fn: (self: any, lumMod: any): any => {
         let schemeClr: any;
         schemeClr = aSchemeClr().withNsdecls().element;
-        schemeClr.append(lumMod);
+        $append(schemeClr, lumMod);
         return schemeClr;
       } },
     schemeClr_with_lumMod_xml: { args: [], fn: (self: any): any => {
@@ -53,7 +53,7 @@ const Describe_BaseColorElement: any = {
     schemeClr_with_lumOff: { args: ["lumOff"], fn: (self: any, lumOff: any): any => {
         let schemeClr: any;
         schemeClr = aSchemeClr().withNsdecls().element;
-        schemeClr.append(lumOff);
+        $append(schemeClr, lumOff);
         return schemeClr;
       } },
   },

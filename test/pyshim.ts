@@ -795,7 +795,17 @@ export const $itertools = {
   },
   chain: (...its: any[]) => its.flatMap($list),
   product: (...lists: any[]) => $product(...lists),
-  islice: (it: any, n: number) => $list(it).slice(0, n),
+  /** `islice(it, n)`: the next `n` items, taken lazily so a shared or infinite iterator advances by `n` */
+  islice: (it: any, n: number) => {
+    const out: any[] = [];
+    if (n <= 0) return out;
+    const iter = it[Symbol.iterator]();
+    for (let r = iter.next(); !r.done; r = iter.next()) {
+      out.push(r.value);
+      if (out.length >= n) break;
+    }
+    return out;
+  },
   repeat: function* (v: any, n?: number) {
     for (let i = 0; n === undefined || i < n; i++) yield v;
   },
@@ -850,8 +860,11 @@ function bindKw(fn: Function, args: any[]): any[] {
   const last = args[args.length - 1];
   if (!(last !== null && typeof last === "object" && last[KW])) return args;
   const pos = args.slice(0, -1);
-  const kw: Record<string, any> = Object.fromEntries(Object.entries(last).map(([k, v]) => [mockMod.KW_ALIASES[k] ?? camel(k), v]));
   const sig = signatureOf(fn) ?? [];
+  // a src parameter is the camelCased python name; a test-local helper keeps the python name
+  const kw: Record<string, any> = Object.fromEntries(
+    Object.entries(last).map(([k, v]) => [sig.some((p) => p.name === k && !p.rest && !p.keys) ? k : (mockMod.KW_ALIASES[k] ?? camel(k)), v]),
+  );
   const out = pos.slice();
   const leftover: Record<string, any> = {};
   for (const [k, v] of Object.entries(kw)) {
@@ -1061,13 +1074,23 @@ export const $pptx = { __file__: new URL("../__init__.py", import.meta.url).path
  * python's `datetime` module, as pptx-ts represents it: a naive datetime is a `Date` holding that
  * wall-clock time in UTC (see src/oxml/coreprops.ts); a timedelta is a number of milliseconds.
  */
-class PyDatetime extends Date {
+class PyDate extends Date {}
+class PyDatetime extends PyDate {
   /** `dt.replace(tzinfo=None)`: datetimes here are already naive. */
   replace(_kw?: any): PyDatetime {
     return this;
   }
 }
 export const $datetime = {
+  /** `date(y, m, d)`: midnight UTC (python's `datetime` subclasses `date`, as here). */
+  date: Object.assign(
+    function date(y: number, mo: number, d: number): PyDate {
+      const t = new PyDate(Date.UTC(y, mo - 1, d));
+      t.setUTCFullYear(y);
+      return t;
+    },
+    { today: () => { const n = new Date(); return new PyDate(Date.UTC(n.getFullYear(), n.getMonth(), n.getDate())); } },
+  ),
   datetime: Object.assign(
     function datetime(y: number, mo: number, d: number, h = 0, mi = 0, s = 0, us = 0): PyDatetime {
       const t = new PyDatetime(Date.UTC(y, mo - 1, d, h, mi, s, Math.floor(us / 1000)));

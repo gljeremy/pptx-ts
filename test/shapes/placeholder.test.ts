@@ -7,7 +7,7 @@ import { $assert, $assertEqual, $call, $d, $get, $getattr, $is, $isinstance, $kw
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-import { ChartData as ChartData$imported } from "../stage5_standins.js";
+import { ChartData as ChartData$imported } from "../../src/chart/data.js";
 import { XL_CHART_TYPE as XCT$imported } from "../../src/enum/chart.js";
 import { MSO_SHAPE_TYPE as MSO_SHAPE_TYPE$imported, PP_PLACEHOLDER as PP_PLACEHOLDER$imported } from "../../src/enum/shapes.js";
 import { ST_Direction as ST_Direction$imported, ST_PlaceholderSize as ST_PlaceholderSize$imported } from "../../src/oxml/shapes/shared.js";

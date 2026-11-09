@@ -1,13 +1,13 @@
 // Chart part objects, including Chart and Charts (`pptx.parts.chart`).
 import type { XL_CHART_TYPE } from "../enum/chart.js";
-import { NotImplementedError } from "../errors.js";
+import { Chart } from "../chart/chart.js";
 import { CONTENT_TYPE as CT, RELATIONSHIP_TYPE as RT } from "../opc/constants.js";
 import { XmlPart, type Part } from "../opc/package.js";
 import type { Package } from "../package.js";
 import { lazy } from "../util.js";
 import { EmbeddedXlsxPart } from "./embeddedpackage.js";
 
-/** What `ChartPart.new()` needs from a `ChartData` object (`pptx.chart.data`, stage 5). */
+/** What `ChartPart.new()` needs from a chart data object (`CategoryChartData`, `XyChartData`, ...). */
 export interface ChartDataSource {
   xmlBytes(chartType: XL_CHART_TYPE): Uint8Array;
   readonly xlsxBlob: Uint8Array;
@@ -32,8 +32,8 @@ export class ChartPart extends XmlPart {
   }
 
   /** `Chart` object representing the chart in this part. */
-  get chart(): never {
-    throw new NotImplementedError("chart objects (pptx.chart) are ported in stage 5, see gljeremy/pptx-ts#5");
+  get chart(): Chart {
+    return lazy(this, "chart", () => new Chart(this._element, this));
   }
 
   /**

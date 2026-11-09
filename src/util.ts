@@ -1,6 +1,6 @@
 // Utility functions and classes (`pptx.util`), plus the small pieces of Python
 // numeric semantics the port needs to produce identical XML.
-import { ValueError } from "./errors.js";
+import { IndexError, KeyError, ValueError } from "./errors.js";
 
 const EMUS_PER_INCH = 914400;
 const EMUS_PER_CENTIPOINT = 127;
@@ -139,6 +139,24 @@ export function pyStr(v: unknown): string {
   return String(v);
 }
 
+/**
+ * A value as python's `str.format()` and `%s` write it: integral numbers as ints ("2"),
+ * other numbers as python floats ("1.5", "1e-05"), None/True/False by name.
+ */
+export function pyFormatValue(v: unknown): string {
+  return typeof v === "number" && !Number.isInteger(v) ? pyFloatStr(v) : pyStr(v);
+}
+
+/** Python `template.format(**fields)` for `{name}` fields (no format specs). */
+export function pyFormat(template: string, fields: Record<string, unknown>): string {
+  return template.replace(/\{\{|\}\}|\{(\w*)\}/g, (m, name: string | undefined) => {
+    if (m === "{{") return "{";
+    if (m === "}}") return "}";
+    if (!(name! in fields)) throw new KeyError(`'${name}'`);
+    return pyFormatValue(fields[name!]);
+  });
+}
+
 /** Python `repr()` of a str. */
 export function pyReprStr(s: string): string {
   const q = s.includes("'") && !s.includes('"') ? '"' : "'";
@@ -187,7 +205,7 @@ export function pyPercent(fmt: string | number, args: readonly unknown[]): any {
     let s: string;
     switch (conv) {
       case "s":
-        s = typeof v === "number" && !Number.isInteger(v) ? pyFloatStr(v) : pyStr(v);
+        s = pyFormatValue(v);
         if (prec !== undefined) s = s.slice(0, Number(prec));
         break;
       case "r":
@@ -247,4 +265,20 @@ export function xmlEscape(s: string, entities: Record<string, string> = {}): str
   let out = s.replace(/&/g, "&amp;").replace(/>/g, "&gt;").replace(/</g, "&lt;");
   for (const [k, v] of Object.entries(entities)) out = out.split(k).join(v);
   return out;
+}
+
+/** Python `lst[idx]` for an int index: negative counts from the end, `IndexError` when out of range. */
+export function pyItem<T>(seq: ArrayLike<T>, idx: number): T {
+  const i = idx < 0 ? seq.length + idx : idx;
+  if (!Number.isInteger(i) || i < 0 || i >= seq.length) throw new IndexError("list index out of range");
+  return seq[i];
+}
+
+/**
+ * Python `d[key]` on a dict literal: raises `KeyError` when `key` is missing, where a JS object
+ * would give `undefined` (and a `try { ... } catch KeyError` around the lookup never fire).
+ */
+export function pyGetItem<V>(d: Record<string, V>, key: string): V {
+  if (!Object.prototype.hasOwnProperty.call(d, key)) throw new KeyError(`'${key}'`);
+  return d[key];
 }

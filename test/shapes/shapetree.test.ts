@@ -9,7 +9,7 @@ import { $assert, $assertEqual, $call, $d, $dictget, $endswith, $get, $index, $i
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
-import { ChartData as ChartData$imported } from "../stage5_standins.js";
+import { ChartData as ChartData$imported } from "../../src/chart/data.js";
 import { XL_CHART_TYPE as XL_CHART_TYPE$imported } from "../../src/enum/chart.js";
 import { MSO_AUTO_SHAPE_TYPE as MSO_AUTO_SHAPE_TYPE$imported, MSO_CONNECTOR as MSO_CONNECTOR$imported, PP_PLACEHOLDER as PP_PLACEHOLDER$imported, PROG_ID as PROG_ID$imported } from "../../src/enum/shapes.js";
 import { SPEAKER_IMAGE_BYTES as SPEAKER_IMAGE_BYTES$imported, Video as Video$imported } from "../../src/media.js";

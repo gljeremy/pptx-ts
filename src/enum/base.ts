@@ -5,7 +5,7 @@
 // (`PP_ACTION_TYPE(10)`). Here a member is a `Number` object (so `+member`, `member == 6`
 // and arithmetic work) and an enum is a callable object made by `defineEnum()`, with its
 // members as properties and the class-level methods (`fromXml`, `toXml`, `validate`).
-import { ValueError } from "../errors.js";
+import { KeyError, ValueError } from "../errors.js";
 
 /** A member of a `BaseEnum`: a Number with a name and docstring. */
 export class BaseEnum extends Number {
@@ -143,4 +143,34 @@ export function defineEnum(name: string, base: typeof BaseEnum, defs: Record<str
 function pyRepr(v: unknown): string {
   if (typeof v !== "string") return String(v);
   return v.includes("'") && !v.includes('"') ? `"${v}"` : `'${v.replace(/\\/g, "\\\\").replace(/'/g, "\\'")}'`;
+}
+
+/**
+ * A python dict keyed by enum members (`{XL_CHART_TYPE.PIE: "pie", ...}`). Keys are compared
+ * by integer value, as python's int enums hash and compare like their values, so a member or
+ * a plain number finds the same entry.
+ */
+export class EnumDict<V> {
+  private readonly _d = new Map<number, V>();
+
+  constructor(entries: Iterable<readonly [number | BaseEnum, V]>) {
+    for (const [k, v] of entries) this._d.set(+k, v);
+  }
+
+  /** `d[key]`: raises `KeyError` when `key` is missing. */
+  getItem(key: number | BaseEnum): V {
+    const k = +key;
+    if (!this._d.has(k)) throw new KeyError(String(key));
+    return this._d.get(k)!;
+  }
+
+  /** `d.get(key, default)`. */
+  get<D = undefined>(key: number | BaseEnum, dflt?: D): V | D {
+    const k = +key;
+    return this._d.has(k) ? this._d.get(k)! : (dflt as D);
+  }
+
+  has(key: number | BaseEnum): boolean {
+    return this._d.has(+key);
+  }
 }

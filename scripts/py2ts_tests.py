@@ -51,7 +51,7 @@ DISPATCH = {
 }
 # dispatch only when the receiver is not obviously a src object
 DISPATCH_ALWAYS = {"split", "strip", "lstrip", "rstrip", "lower", "upper", "startswith", "endswith", "encode",
-                   "decode", "splitlines", "isdigit", "setdefault", "extend"}
+                   "decode", "splitlines", "isdigit", "setdefault", "extend", "append"}
 
 
 JS_RESERVED = {
@@ -643,6 +643,12 @@ class T:
             name = item.optional_vars.id
             decl = "let " if self.declare(name) else ""
             out.append(p + f"{decl}{ident(name)} = $enter({cm});")
+        elif isinstance(item.optional_vars, ast.Tuple) and all(isinstance(e, ast.Name) for e in item.optional_vars.elts):
+            # `with cm as (a, b):` unpacks what `__enter__()` returns
+            names = [e.id for e in item.optional_vars.elts]
+            fresh = [self.declare(nm) for nm in names]
+            decl = "let " if any(fresh) else ""
+            out.append(p + f"{decl}[{', '.join(ident(nm) for nm in names)}] = $list($enter({cm}));")
         else:
             out.append(p + f"$enter({cm});")
         return out + [p + "try {"] + self.body(s.body, ind + 1) + [p + "} finally {", p + f"  $exit({cm});", p + "}"]
@@ -946,7 +952,15 @@ def assigned_names(stmts):
 def import_lines(t, rel_src, rel_test):
     """ES imports for the names the python module imported."""
     by_mod = {}
+    stdlib = []
     for local, (mod, orig) in t.imports.items():
+        if mod in ("datetime", "itertools"):
+            # `from datetime import date`, `from itertools import islice`: the shim's module
+            stdlib.append(f"const {local} = $py.${mod}.{orig};")
+            continue
+        if mod.split(".")[0] == "xlsxwriter":
+            # XlsxWriter is replaced by pptx-ts's own workbook writer
+            mod = "pptx.xlsx.workbook"
         if mod.startswith("pptx"):
             path = mod[len("pptx"):].lstrip(".").replace(".", "/") or "index"
             src_root = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src"))
@@ -966,7 +980,7 @@ def import_lines(t, rel_src, rel_test):
             if m.startswith("unitutil.mock") or m == "unitutil.mock":
                 continue  # provided by pyshim
             if m in ("unitutil", "unitutil.__init__"):
-                continue
+                m = "unitutil.index"
             target = f"{rel_test}/{m.replace('.', '/')}.js"
         else:
             continue
@@ -995,7 +1009,7 @@ def import_lines(t, rel_src, rel_test):
     if snapshots:
         lines.append("// python binds imported names at import time; patches made later don't change them")
         lines += snapshots
-    return lines
+    return lines + stdlib
 
 
 def main():

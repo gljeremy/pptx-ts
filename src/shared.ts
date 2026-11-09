@@ -1,5 +1,6 @@
 // Objects shared by pptx modules (`pptx.shared`).
 import type { BaseOxmlElement } from "./oxml/xmlchemy.js";
+import { PY_GETITEM, PY_LEN } from "./oxml/xml.js";
 
 /** Anything that can supply the package part it belongs to. */
 export interface ProvidesPart {
@@ -71,4 +72,39 @@ export class PartElementProxy extends ElementProxy {
 export function proxyEquals(a: unknown, b: unknown): boolean {
   if (a === b) return true;
   return a instanceof ElementProxy && a.equals(b) === true;
+}
+
+/** Python sequence equality: unwrap String labels by value, then use `equals()` or `===`. */
+function itemEquals(a: any, b: unknown): boolean {
+  if (a instanceof String) a = a.valueOf();
+  if (b instanceof String) b = b.valueOf();
+  return a !== null && typeof a === "object" && typeof a.equals === "function" ? a.equals(b) : a === b;
+}
+
+/**
+ * python's `collections.abc.Sequence`: subclasses supply `at(idx)` and `length`, and get
+ * iteration, `[PY_GETITEM]`/`[PY_LEN]` (python `seq[i]`/`len(seq)`) and `includes()` (`in`)
+ * from them, as python derives them from `__getitem__`/`__len__`.
+ */
+export abstract class PySequence<T> implements Iterable<T> {
+  abstract at(idx: number): T;
+  abstract get length(): number;
+
+  [PY_GETITEM](idx: number): T {
+    return this.at(idx);
+  }
+
+  [PY_LEN](): number {
+    return this.length;
+  }
+
+  *[Symbol.iterator](): Generator<T> {
+    for (let i = 0; i < this.length; i++) yield this.at(i);
+  }
+
+  /** python `value in seq`. */
+  includes(value: unknown): boolean {
+    for (const v of this) if (itemEquals(v, value)) return true;
+    return false;
+  }
 }

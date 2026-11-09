@@ -30,6 +30,8 @@ interface Step {
 type Expr =
   | { k: "path"; abs: boolean; steps: Step[] }
   | { k: "union"; parts: Expr[] }
+  /** a filter expression: `(expr)[pred]/step/...` or `fn()[pred]//step` */
+  | { k: "filter"; base: Expr; preds: Expr[]; steps: Step[] }
   | { k: "lit"; v: string }
   | { k: "num"; v: number }
   | { k: "bin"; op: string; l: Expr; r: Expr }
@@ -178,7 +180,7 @@ class XParser {
       this.next();
       const e = this.or();
       this.expect(")");
-      return e;
+      return this.filterTail(e);
     }
     if (t.t === "name" && this.peek(1)?.t === "(" && !["text", "node"].includes(t.v)) {
       this.next();
@@ -192,9 +194,31 @@ class XParser {
         }
       }
       this.expect(")");
-      return { k: "fn", name: t.v, args };
+      return this.filterTail({ k: "fn", name: t.v, args });
     }
     return this.path();
+  }
+  /** Predicates and a relative location path after a primary expression, if any. */
+  filterTail(base: Expr): Expr {
+    const preds: Expr[] = [];
+    while (this.peek()?.t === "[") {
+      this.next();
+      preds.push(this.or());
+      this.expect("]");
+    }
+    const steps: Step[] = [];
+    for (;;) {
+      const n = this.peek();
+      if (n?.t === "/") {
+        this.next();
+        steps.push(this.step());
+      } else if (n?.t === "//") {
+        this.next();
+        steps.push({ axis: "descendant-or-self", test: "node()", preds: [] });
+        steps.push(this.step());
+      } else break;
+    }
+    return preds.length || steps.length ? { k: "filter", base, preds, steps } : base;
   }
   path(): Expr {
     const steps: Step[] = [];
@@ -451,6 +475,21 @@ function evalExpr(e: Expr, node: Item, ctx: Ctx, pos: number, size: number): Val
     }
     case "fn":
       return callFn(e.name, e.args, node, ctx, pos, size);
+    case "filter": {
+      const v = evalExpr(e.base, node, ctx, pos, size);
+      if (!Array.isArray(v)) throw new Error("XPathEvalError: filter of a non-node-set");
+      // predicates count positions in document order (the base is a node-set)
+      let cur = sortDocOrder(v);
+      for (const p of e.preds) {
+        const n = cur.length;
+        cur = cur.filter((c, i) => {
+          const pv = evalExpr(p, c, ctx, i + 1, n);
+          return typeof pv === "number" ? pv === i + 1 : toBool(pv);
+        });
+      }
+      for (const st of e.steps) cur = evalStep(cur, st, ctx);
+      return e.steps.length ? sortDocOrder(cur) : cur;
+    }
     case "bin": {
       if (e.op === "or") return toBool(evalExpr(e.l, node, ctx, pos, size)) || toBool(evalExpr(e.r, node, ctx, pos, size));
       if (e.op === "and") return toBool(evalExpr(e.l, node, ctx, pos, size)) && toBool(evalExpr(e.r, node, ctx, pos, size));

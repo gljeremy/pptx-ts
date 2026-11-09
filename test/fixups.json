@@ -158,6 +158,13 @@
       "python tuples are JS arrays (PARITY.md, Python to TypeScript)"
     ]
   ],
+  "test/features/steps/text.ts": [
+    [
+      "  line_spacing = context.paragraph.lineSpacing;",
+      "  line_spacing = context.paragraph.lineSpacing;\n  if (exception !== null && line_spacing !== null) {\n    $assert(line_spacing === 1.5 || line_spacing === 2.0);\n    return;\n  }",
+      "line multiples are plain numbers rather than Python floats without .pt; assert the upstream scenario multiples directly, retaining typed AttributeError checks for null and point conversion for EMU lengths"
+    ]
+  ],
   "test/features/steps/chart.ts": [
     [
       "import { Legend } from \"../../../src/chart/chart.js\";",

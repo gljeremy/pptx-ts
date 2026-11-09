@@ -80,7 +80,7 @@ export function parseFeature(text: string): Feature {
       endOutline();
       continue;
     }
-    if ((m = /^Scenario Outline:\s*(.*)$/.exec(line)) || (m = /^Scenario Template:\s*(.*)$/.exec(line))) {
+    if ((m = /^Scenario Outline:\s*(.*)$/.exec(line))) {
       outline = { name: m[1], line: i + 1, steps: [] };
       examplesHeader = null;
       steps = outline.steps;
@@ -93,12 +93,12 @@ export function parseFeature(text: string): Feature {
       steps = sc.steps;
       continue;
     }
-    if (/^(Examples|Scenarios):/.test(line)) {
+    if (/^Examples:/.test(line)) {
       examplesHeader = null;
       steps = null;
       continue;
     }
-    if ((m = /^(Given|When|Then|And|But|\*)\s+(.*)$/.exec(line))) {
+    if ((m = /^(Given|When|Then|And|But)\s+(.*)$/.exec(line))) {
       const kw = m[1];
       const kind: Kind = kw === "Given" ? "given" : kw === "When" ? "when" : kw === "Then" ? "then" : lastKind;
       lastKind = kind;
@@ -107,11 +107,10 @@ export function parseFeature(text: string): Feature {
       steps.push(lastStep);
       continue;
     }
-    if (line.startsWith('"""') || line.startsWith("```")) {
-      const fence = line.slice(0, 3);
-      const indent = raw.indexOf(fence);
+    if (line.startsWith('"""')) {
+      const indent = raw.indexOf('"""');
       const body: string[] = [];
-      for (i++; i < lines.length && lines[i].trim() !== fence; i++) body.push(lines[i].slice(indent));
+      for (i++; i < lines.length && lines[i].trim() !== '"""'; i++) body.push(lines[i].slice(indent));
       lastStep!.docString = body.join("\n");
       continue;
     }

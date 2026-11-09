@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { ElementProxy } from "../src/shared.js";
 import { XmlElement } from "../src/oxml/xml.js";
 import { Length, pyFloatStr, pyReprStr } from "../src/util.js";
+import { AttributeError } from "../src/errors.js";
 import { createHash } from "node:crypto";
 import nodePath from "node:path";
 import { unzipSync } from "fflate";
@@ -455,7 +456,7 @@ export function $getattr(o: any, name: string, ...dflt: any[]): any {
     }
   }
   if (dflt.length) return dflt[0];
-  throw new TypeError(`AttributeError: '${o?.constructor?.name}' object has no attribute '${name}'`);
+  throw new AttributeError(`'${o?.constructor?.name}' object has no attribute '${name}'`);
 }
 
 export function $setattr(o: any, name: string, v: any): void {
@@ -915,10 +916,10 @@ export const $newm = $call;
 
 /** python method call `obj.name(*args, **kwargs)` */
 export function $m(obj: any, name: string, ...args: any[]): any {
-  if (obj === null || obj === undefined) throw new TypeError(`'NoneType' object has no attribute '${name}'`);
+  if (obj === null || obj === undefined) throw new AttributeError(`'NoneType' object has no attribute '${name}'`);
   const fn = obj[name];
   if (isMock(fn)) return fn(...args);
-  if (typeof fn !== "function") throw new TypeError(`AttributeError: '${obj?.constructor?.name}' object has no attribute '${name}'`);
+  if (typeof fn !== "function") throw new AttributeError(`'${obj?.constructor?.name}' object has no attribute '${name}'`);
   if (fn.__pyPassKw) return fn.apply(obj, args);
   return fn.apply(obj, bindKw(fn, args));
 }
@@ -981,7 +982,7 @@ const isArr = Array.isArray;
 const isS = (o: any) => typeof o === "string" || o instanceof String;
 const callOwn = (o: any, name: string, args: any[]) => {
   const fn = o?.[name];
-  if (typeof fn !== "function") throw new TypeError(`AttributeError: '${o?.constructor?.name}' object has no attribute '${name}'`);
+  if (typeof fn !== "function") throw new AttributeError(`'${o?.constructor?.name}' object has no attribute '${name}'`);
   return isMock(fn) ? fn(...args) : fn.apply(o, bindKw(fn, args));
 };
 

@@ -91,8 +91,9 @@ prs.save("test.pptx");
 ```
 
 Not every shape can hold text; `shape.hasTextFrame` says whether it can. A text frame always
-has at least one paragraph. `shape.text` and `textFrame.text` set the text of the first
-paragraph and remove the others.
+has at least one paragraph. Assigning `shape.text` or `textFrame.text` replaces all existing
+contents, creating a paragraph for each newline (`\n`) and a soft line break for each
+vertical tab (`\v`) in the assigned string.
 
 ### `addTextbox()`
 

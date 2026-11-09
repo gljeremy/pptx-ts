@@ -1,7 +1,6 @@
 // The "Getting started" examples in README.md (python-pptx's docs/user/quickstart.rst in
 // TypeScript), checked part by part against python-pptx's output for the same steps
-// (test/fixtures/quickstart, written by scripts/quickstart_golden.py). Only docProps/core.xml
-// differs: both libraries stamp the current time there.
+// (test/fixtures/quickstart, written by scripts/quickstart_golden.py).
 import { readFileSync } from "node:fs";
 import { expect, it } from "vitest";
 import { unzipSync } from "fflate";
@@ -123,10 +122,8 @@ for (const [name, build] of Object.entries(examples)) {
     const ts = unzipSync(out.getvalue());
     const py = unzipSync(new Uint8Array(readFileSync(new URL(`./fixtures/quickstart/${name}.pptx`, import.meta.url))));
     expect(Object.keys(ts).sort()).toEqual(Object.keys(py).sort());
-    const dec = new TextDecoder();
     for (const part of Object.keys(py)) {
-      if (part === "docProps/core.xml") continue;
-      expect(dec.decode(ts[part]), part).toBe(dec.decode(py[part]));
+      expect(ts[part], part).toEqual(py[part]);
     }
   });
 }

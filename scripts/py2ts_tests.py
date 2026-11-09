@@ -622,9 +622,24 @@ class T:
         p = "  " * ind
         out = [p + "try {"] + self.body(s.body, ind + 1)
         if s.handlers:
-            h = s.handlers[0]
-            out.append(p + f"}} catch ({h.name or '_e'}: any) {{")
-            out += self.body(h.body, ind + 1)
+            out.append(p + "} catch (_e: any) {")
+            for i, h in enumerate(s.handlers):
+                broad = h.type is None or ast.unparse(h.type) in ("Exception", "BaseException")
+                if not broad:
+                    condition = f"$isinstance(_e, {self.expr(h.type)})"
+                    out.append(p + "  " + ("if" if i == 0 else "} else if") + f" ({condition}) {{")
+                elif i:
+                    out.append(p + "  } else {")
+                depth = ind + (2 if i or not broad else 1)
+                self.scopes.append({h.name} if h.name else set())
+                if h.name:
+                    out.append("  " * depth + f"const {ident(h.name)} = _e;")
+                out += self.body(h.body, depth)
+                self.scopes.pop()
+            if not broad:
+                out += [p + "  } else {", p + "    throw _e;"]
+            if len(s.handlers) > 1 or not broad:
+                out.append(p + "  }")
         if s.finalbody:
             out.append(p + "} finally {")
             out += self.body(s.finalbody, ind + 1)

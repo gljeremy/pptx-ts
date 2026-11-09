@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as $py from "../../pyshim.js";
-import { $assert, $assertEqual, $call, $cast, $cm1, $cm2, $cm3, $cmp, $enter, $exit, $get, $int, $is, $len, $mod, $open, $os, $path, $read, $truthy, $typename, $zipfile, BytesIO } from "../../pyshim.js";
+import { $assert, $assertEqual, $call, $cast, $cm1, $cm2, $cm3, $cmp, $enter, $exit, $get, $int, $is, $isinstance, $len, $mod, $open, $os, $path, $read, $truthy, $typename, $zipfile, BytesIO } from "../../pyshim.js";
 import { AttributeError, IndexError, KeyError, NotImplementedError, ValueError } from "../../../src/errors.js";
 import { step } from "../runner.js";
 import { saved_pptx_path, test_file, test_pptx } from "./helpers.js";
@@ -224,7 +224,11 @@ function then_I_can_access_the_JPEG_image(context: any): any {
   try {
     picture.image;
   } catch (_e: any) {
-    throw new Error("JPEG image not recognized");
+    if ($isinstance(_e, AttributeError)) {
+      throw new Error("JPEG image not recognized");
+    } else {
+      throw _e;
+    }
   }
 }
 step("then", "I can access the JPEG image", [], then_I_can_access_the_JPEG_image);

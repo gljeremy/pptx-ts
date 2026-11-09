@@ -26,9 +26,11 @@ Port of [python-pptx](https://github.com/scanny/python-pptx) at commit `278b47b`
 | behave | `test/features/runner.ts`: Feature, Background, Scenario (Outline), Examples, step tables and doc strings; steps match like behave's `parse` matcher; `context.execute_steps()` |
 | python `eval()` in steps | `test/features/pyeval.ts`: literals, names from the step module, attributes, calls and arithmetic |
 
-All 973 scenarios pass, the same count behave reports for python-pptx. Two step edits are recorded in
-`test/fixups.json`: `categories.flattened_labels` is checked to be an `Array` rather than a python
-`tuple`, and `Legend` is imported from `chart/legend` (`pptx.chart.chart` only re-exports it).
+All 973 scenarios pass, the same count behave reports for python-pptx. Three step adaptations are
+recorded in `test/fixups.json`: `categories.flattened_labels` is checked to be an `Array` rather
+than a python `tuple`; `Legend` is imported from `chart/legend` (`pptx.chart.chart` only re-exports
+it); and line-spacing multiples are checked as plain numbers rather than Python floats lacking
+`.pt`. Null spacing still requires `AttributeError`, and EMU lengths are converted to points.
 `test/quickstart.test.ts` runs the examples from python-pptx's `docs/user/quickstart.rst` (README,
 "Getting started") and compares every part of each deck with python-pptx's output.
 

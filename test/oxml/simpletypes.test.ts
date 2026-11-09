@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as $py from "../pyshim.js";
-import { $abs, $assert, $assertEqual, $call, $cmp, $is, $kw, $list, $mod, $raises, $truthy, instanceMock, methodMock, pytestClass } from "../pyshim.js";
+import { $abs, $assert, $assertEqual, $call, $cmp, $is, $isinstance, $kw, $list, $mod, $raises, $truthy, instanceMock, methodMock, pytestClass } from "../pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
@@ -172,7 +172,11 @@ const DescribeST_HexColorRGB: any = {
           try {
             ST_HexColorRGB.validate(str_value);
           } catch (_e: any) {
-            throw new Error($mod("string '%s' did not validate", str_value));
+            if ($isinstance(_e, ValueError)) {
+              throw new Error($mod("string '%s' did not validate", str_value));
+            } else {
+              throw _e;
+            }
           }
         } else {
           $raises(exception, () => {

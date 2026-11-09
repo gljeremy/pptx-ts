@@ -338,7 +338,12 @@ function then_accessing_shape_click_action_raises_TypeError(context: any): any {
   try {
     context.shape.clickAction;
   } catch (_e: any) {
-    return;
+    if ($isinstance(_e, TypeError)) {
+      return;
+    } else {
+      const e = _e;
+      throw new Error($mod("Accessing GroupShape.click_action raised %s", $typename(e)));
+    }
   }
   throw new Error("Accessing GroupShape.click_action did not raise");
 }
@@ -653,7 +658,12 @@ function then_shape_shadow_raises_NotImplementedError(context: any): any {
   try {
     context.shape.shadow;
   } catch (_e: any) {
-    return;
+    if ($isinstance(_e, NotImplementedError)) {
+      return;
+    } else {
+      const e = _e;
+      throw new Error($mod("shape.shadow raises %s", $typename(e)));
+    }
   }
   throw new Error("shape.shadow did not raise");
 }

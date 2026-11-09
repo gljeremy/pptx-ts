@@ -1,4 +1,4 @@
-"""python-pptx stage-2 workloads (Presentation API), for comparison with bench_prs.mjs.
+"""python-pptx Presentation API workloads, for comparison with bench_prs.mjs.
 
 Usage: python bench/bench_prs.py <deck.pptx> [acceptance test_files dir]
 """

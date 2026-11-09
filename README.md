@@ -294,9 +294,9 @@ upstream's structure and docstrings) and are then reviewed and corrected by hand
 
 ## Performance
 
-Best of 5 (best of 3 for the larger cases), Node 22 vs CPython 3.13 + lxml 5.3
-(`bench/bench_prs.*`, `bench/bench_opc.*`; the single deck is `cht-charts.pptx` from
-python-pptx's test files, the 60 decks are its acceptance test decks):
+Node 22 vs CPython 3.13 + lxml 5.3 (`bench/bench_prs.*`, `bench/bench_opc.*`).
+The single deck is `cht-charts.pptx` from python-pptx's test files; the 60 decks are its
+acceptance test decks. Trial counts for each workload are defined in the benchmark scripts:
 
 | Workload | python-pptx | pptx-ts |
 | --- | ---: | ---: |

@@ -1,4 +1,4 @@
-// pptx-ts stage-2 workloads (Presentation API), for comparison with bench_prs.py.
+// pptx-ts Presentation API workloads, for comparison with bench_prs.py.
 // Usage: npm run build && node bench/bench_prs.mjs <deck.pptx> [acceptance test_files dir]
 import fs from "node:fs";
 import path from "node:path";

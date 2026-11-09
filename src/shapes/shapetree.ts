@@ -993,6 +993,9 @@ export class _OleObjectElementCreator {
   /** Newly-created `p:graphicFrame` element referencing embedded OLE-object. */
   get _graphicFrame(): CT_GraphicalObjectFrame {
     return lazy(this, "_graphicFrame", () => {
+      // Resolve optional icons before creating a relationship, so a missing import cannot
+      // leave an invisible attachment behind (regression: scripts/check_bundle.mjs).
+      this._iconImageFile;
       return CT_GraphicalObjectFrame.newOleObjectGraphicFrame(this._shapeId, this._shapeName, this._oleObjectRId, this._progId, this._iconRId, this._x, this._y, this._cx, this._cy, this._iconWidth, this._iconHeight);
     });
   }
@@ -1042,7 +1045,7 @@ export class _OleObjectElementCreator {
       if (this._iconFileArg !== null) {
         return this._iconFileArg;
       }
-      // python opens pptx/templates/<icon>; the icons are bundled in src/templates/data.ts
+      // Delegate icon availability and package-file fallback to templateBytes().
       const iconFilename = this._progIdArg instanceof PROG_ID ? this._progIdArg.iconFilename : "generic-icon.emf";
       return new BytesIO(templateBytes(iconFilename));
     });

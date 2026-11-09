@@ -216,6 +216,20 @@ prs.save(out);
 const blob = new Blob([out.getvalue()], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
 ```
 
+The package is ES modules with types, and its only dependency is
+[fflate](https://github.com/101arrowz/fflate). Bundled for the browser, it is about 400 KB
+minified, 130 KB gzipped. `addOleObject()` without an icon file uses python-pptx's built-in
+icons, which are kept out of that bundle (about 260 KB). In the browser, load them first:
+
+```ts
+import "pptx-ts/ole-icons";                 // or: await import("pptx-ts/ole-icons") when needed
+slide.shapes.addOleObject(xlsxBytes, PROG_ID.XLSX, Inches(1), Inches(1));
+```
+
+Without this import or a custom icon file, browser `addOleObject()` raises `KeyError`
+before embedding the attachment. Node reads the icons from the package's files, so it needs
+no import.
+
 ### From python-pptx
 
 | python-pptx | pptx-ts |
@@ -339,8 +353,11 @@ python scripts/image_golden.py test/fixtures/images_pillow.json test/fixtures/im
 python scripts/text_golden.py test/test_files/calibriz.ttf test/fixtures/text_golden.json
 python scripts/gen_unitdata.py ../python-pptx test/oxml/unitdata
 npm run demo:build                                              # demo/pptx.js for demo/index.html
+npm run check:bundle                                            # browser bundle: size, no OLE icons, runs
+npm run check:pack                                              # npm pack -> fresh Vite project
 python scripts/quickstart_golden.py ../python-pptx test/fixtures/quickstart
 ```
 
-CI (`.github/workflows/ci.yml`) runs typecheck, tests, build and a browser bundle on Node 20
-and 22, Linux and Windows.
+CI runs typecheck, tests, build, browser bundle checks (including the gzip size budget and
+OLE icon registration), and the packed-tarball check in a fresh Vite project. See
+[the workflow](.github/workflows/ci.yml) for the Node and OS matrix.

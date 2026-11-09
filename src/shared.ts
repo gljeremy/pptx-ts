@@ -74,7 +74,7 @@ export function proxyEquals(a: unknown, b: unknown): boolean {
   return a instanceof ElementProxy && a.equals(b) === true;
 }
 
-/** python `a == b` for sequence items: an `equals()` method if the item has one, else `===`. */
+/** Python sequence equality: unwrap String labels by value, then use `equals()` or `===`. */
 function itemEquals(a: any, b: unknown): boolean {
   if (a instanceof String) a = a.valueOf();
   if (b instanceof String) b = b.valueOf();

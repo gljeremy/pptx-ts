@@ -87,10 +87,8 @@ ${ptXml}              </c:numCache>
   /**
    * Return the ``<c:ptCount>`` and sequence of ``<c:pt>`` elements
    * corresponding to *values* as a single unicode text string.
-   * `c:ptCount` refers to the number of `c:pt` elements in this sequence.
-   * The `idx` attribute value for `c:pt` elements locates the data point
-   * in the overall data point sequence of the chart and is started at
-   * *offset*.
+   * `c:ptCount` includes null values even though their `c:pt` elements are omitted.
+   * Each `idx` retains the value's zero-based position in the input sequence.
    */
   ptXml(values: any) {
     let xml, idx, value;
@@ -1294,7 +1292,7 @@ export class _BubbleSeriesXmlWriter extends _XySeriesXmlWriter {
 export class _BubbleSeriesXmlRewriter extends _BaseSeriesXmlRewriter {
 
   /**
-   * Rewrite the ``<c:tx>``, ``<c:cat>`` and ``<c:val>`` child elements
+   * Rewrite the ``<c:tx>``, ``<c:xVal>``, ``<c:yVal>`` and ``<c:bubbleSize>`` child elements
    * of *ser* based on the values in *series_data*.
    */
   _rewriteSerData(ser: any, seriesData: any, date1904: any) {

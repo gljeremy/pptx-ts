@@ -139,16 +139,20 @@ XML parts), `test/opc/roundtrip.test.ts` (open → save → reopen of every test
     `OSError` there). Like python-pptx, a word wider than the box makes it raise.
 14. **Chart workbooks**: python-pptx writes the workbook embedded in each chart with
     XlsxWriter; pptx-ts has its own writer (`src/xlsx/workbook.ts`) for the calls python-pptx
-    makes, writing the same XML as XlsxWriter 3.2. Only the timestamps in `docProps/core.xml`
-    (and the zip container bytes) differ. XlsxWriter's `write()` turns a string starting with
+    makes on a single worksheet named `Sheet1`. For ordinary chart data, the XML matches
+    XlsxWriter 3.2 except for timestamps in `docProps/core.xml` (the zip container bytes also
+    differ). Worksheet numbers use Python-compatible `%.16G` formatting with ties-to-even
+    rounding. XlsxWriter's `write()` turns a string starting with
     `=` into a formula, a URL-like string into a hyperlink, and `<r>...</r>` into raw rich
     text; pptx-ts writes all of these as plain text (a category named `=Revenue` would
     otherwise show as `#NAME?` in Excel, and a `<r>` label could make the workbook invalid).
 15. **Integral floats in chart XML**: python writes a float value as `11.0` and an int as
     `11`; JS has one number type, so `11.0` is written `11`. PowerPoint and Excel read both
     the same. Non-integral values (`1.1`, `1e-05`) are written exactly as python writes them.
-16. **Dates in chart data** are `Date`s (item 9); python's `date` and `datetime` give the same
-    serial numbers except on 1900-01-01, where a `Date` at midnight is taken as a `date`.
+16. **Dates in chart data** are UTC `Date`s (item 9). Like python-pptx, chart category caches
+    discard the time of day, while the embedded workbook retains it as a fractional day.
+    The workbook follows XlsxWriter's 1900-01-01 special case for non-midnight datetimes;
+    a midnight `Date` is treated as Python's `date`, not a midnight `datetime`.
 17. **Chart collections**: `chart.plots.at(i)`, `plot.series.at(i)`, `series.points.at(i)` and
     `plot.categories.at(i)` are python's `[i]`; `chart.plots.slice(start, end)` is
     `plots[start:end]`. A `Category` is a `String` object, so `String(category)` and

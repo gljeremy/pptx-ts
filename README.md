@@ -8,10 +8,9 @@ Python.
 built-in template; slides, layouts, masters, notes and core properties; shapes, pictures,
 movies, connectors, freeforms, groups, placeholders, fills, lines, colors, hyperlinks and click
 actions; text frames with fonts and paragraphs, `fitText()`; tables; charts of every type
-python-pptx creates, with their embedded Excel workbooks. Decks built with pptx-ts are
-byte-identical to the same steps in python-pptx, and it runs in browsers as well as Node
-([demo](demo/index.html)). Stage 6 ports upstream's acceptance tests; see
-[PARITY.md](PARITY.md) and the stage issues on GitHub.
+python-pptx creates, with their embedded Excel workbooks. It runs in browsers as well as
+Node ([demo](demo/index.html)). See [PARITY.md](PARITY.md) for cross-check results and known
+output differences. Stage 6 ports upstream's acceptance tests; see the stage issues on GitHub.
 
 ```ts
 import { Presentation, BytesIO } from "pptx-ts";
@@ -75,9 +74,8 @@ chart.plots.at(0).hasDataLabels = true;
 - **Images**: python-pptx reads image size and DPI with Pillow; `src/image/headers.ts` reads
   them from PNG, JPEG (JFIF and EXIF), GIF, BMP, TIFF and WMF/EMF headers and is checked
   against Pillow's values (`test/image/headers.test.ts`).
-- **Chart workbooks**: python-pptx writes the Excel workbook embedded in each chart with
-  XlsxWriter; `src/xlsx/workbook.ts` implements the calls python-pptx makes and writes the same
-  XML as XlsxWriter 3.2 (checked part by part by `scripts/crosscheck/chart_build_*`).
+- **Chart workbooks**: `src/xlsx/workbook.ts` replaces XlsxWriter; see
+  [PARITY.md, item 14](PARITY.md#behavioral-differences) for its compatibility scope.
 - **Zip** via [fflate](https://github.com/101arrowz/fflate) (pinned), synchronous in both
   browsers and Node. SHA-1 for image/media de-duplication is a small synchronous
   implementation (`src/sha1.ts`).
@@ -101,14 +99,14 @@ and the bytes of every part after re-saving):
 python scripts/crosscheck/py_side.py ../python-pptx py.json
 npx tsx scripts/crosscheck/ts_side.ts py.json ../python-pptx    # 65/66 decks identical
 python scripts/crosscheck/charts_py.py ../python-pptx charts.json
-npx tsx scripts/crosscheck/charts_ts.ts charts.json ../python-pptx  # 95/95 charts
+npx tsx scripts/crosscheck/charts_ts.ts charts.json ../python-pptx
 python scripts/crosscheck/chart_build_py.py charts.pptx
-npx tsx scripts/crosscheck/chart_build_ts.ts charts.pptx         # 220/221 parts identical
+npx tsx scripts/crosscheck/chart_build_ts.ts charts.pptx
 ```
 
 The one deck difference is a deck without core properties, where both libraries stamp the
-current time. The one chart part difference is a python float written `39.0`, which JS writes
-`39` (PARITY.md, item 15).
+current time. Chart cross-check results and the remaining difference are recorded in
+[PARITY.md](PARITY.md#ported-upstream-tests).
 
 Source modules start from drafts written by `scripts/py2ts_src.py` (a porting aid that keeps
 upstream's structure and docstrings) and are then reviewed and corrected by hand.

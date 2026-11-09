@@ -5,13 +5,8 @@
 // `add_format({num_format})`, `close()`, and on the worksheet `write()`, `write_column()` and
 // `set_column()` -- and writes the same XML as XlsxWriter 3.2 for it: style indexes assigned in
 // order of first use, identical formats sharing one, the same shared-string table, row spans,
-// dimension, column widths and `%.16G` numbers. Only docProps/core.xml's timestamps (and the
-// zip container's bytes) differ.
-//
-// Deliberate differences from XlsxWriter's `write()`: strings that start with "=" (formulas),
-// that look like URLs (hyperlinks), or that are wrapped in "<r>...</r>" (raw rich text) are
-// written as plain text. A chart label like "=Revenue" would otherwise become a formula Excel
-// shows as #NAME?, and a "<r>" label could make the workbook invalid.
+// dimension, column widths and `%.16G` numbers. See PARITY.md, item 14, for the compatibility
+// scope and deliberate string-handling differences.
 import { zipSync, type Zippable } from "fflate";
 import { encodeUtf8 } from "../oxml/xml.js";
 import { pyFloatStr } from "../util.js";
@@ -80,7 +75,8 @@ export class Worksheet {
   /**
    * Write `token` at (`row`, `col`) by its type, as XlsxWriter's `write()`: null or "" is a
    * blank (written only when it has a format), a number a number, a `Date` a date number, and
-   * anything else its string. Returns 0, or -1 when the cell is outside the sheet.
+   * anything else its string. Returns 0, -1 when the cell is outside the sheet, or -2 when
+   * a string is truncated to Excel's limit of 32,767 Unicode code points.
    */
   write(row: number, col: number, token: unknown, format: Format | null = null): number {
     if (token === null || token === undefined) return this._writeBlank(row, col, format);

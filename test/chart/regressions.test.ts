@@ -11,7 +11,6 @@ import { _nsmap } from "../../src/oxml/ns.js";
 import { xpath } from "../../src/oxml/xpath.js";
 import { formatG16, Workbook } from "../../src/xlsx/workbook.js";
 
-const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
 const query = (node: any, expression: string): any => xpath(node, expression, {
   ..._nsmap,
   s: "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -50,7 +49,7 @@ describe("Python percent-G rounding contract", () => {
 
   it("writes ties-to-even values into the serialized worksheet", () => {
     const parts = workbookParts([1000000000000000.5, -1000000000000001.5, 1e23, -1e23]);
-    const sheet = parseXml(decode(parts["xl/worksheets/sheet1.xml"]));
+    const sheet = parseXml(parts["xl/worksheets/sheet1.xml"]);
     expect(query(sheet, ".//s:v").map((node: any) => node.text)).toEqual([
       "1000000000000000", "-1000000000000002", "9.999999999999999E+22", "-9.999999999999999E+22",
     ]);
@@ -96,10 +95,10 @@ describe("python-pptx integer chart-type equivalence", () => {
     const pie = new CategoryChartData();
     pie.categories = ["A"];
     pie.addSeries("Values", [1]);
-    expect(parseXml(decode(pie.xmlBytes(69))).xpath(".//c:explosion")[0].get("val")).toBe("25");
+    expect(parseXml(pie.xmlBytes(69)).xpath(".//c:explosion")[0].get("val")).toBe("25");
     const bubble = new BubbleChartData();
     bubble.addSeries("Values").addDataPoint(1, 2, 3);
-    expect(parseXml(decode(bubble.xmlBytes(87))).xpath(".//c:bubble3D")[0].get("val")).toBe("1");
+    expect(parseXml(bubble.xmlBytes(87)).xpath(".//c:bubble3D")[0].get("val")).toBe("1");
   });
 });
 
@@ -116,7 +115,7 @@ describe("python-pptx integer axis-enum setter contract", () => {
         data.addSeries("Values", [1]);
       }
       const type = kind === "scatter" ? XL_CHART_TYPE.XY_SCATTER : kind === "bar" ? XL_CHART_TYPE.BAR_CLUSTERED : XL_CHART_TYPE.COLUMN_CLUSTERED;
-      const chart = new Chart(parseXml(decode(data.xmlBytes(type))), null);
+      const chart = new Chart(parseXml(data.xmlBytes(type)), null);
       for (const axis of [chart.categoryAxis, chart.valueAxis]) {
         for (const property of ["majorTickMark", "minorTickMark"] as const) {
           for (const member of [XL_TICK_MARK.OUTSIDE, XL_TICK_MARK.CROSS, XL_TICK_MARK.INSIDE, XL_TICK_MARK.NONE, XL_TICK_MARK.CROSS]) {
@@ -166,7 +165,7 @@ describe("XlsxWriter Unicode code-point string limit", () => {
     expect(workbook.addWorksheet().write(0, 0, input)).toBe(status);
     workbook.close();
     const parts = unzipSync(file.getvalue());
-    const strings = query(parseXml(decode(parts["xl/sharedStrings.xml"])), ".//s:t");
+    const strings = query(parseXml(parts["xl/sharedStrings.xml"]), ".//s:t");
     expect(strings.map((node: any) => node.text)).toEqual([expected]);
   });
 
@@ -187,10 +186,10 @@ describe("XlsxWriter Unicode code-point string limit", () => {
       data.addSeries(label).addDataPoint(1, 2, 3);
       type = XL_CHART_TYPE.BUBBLE;
     }
-    const chart = parseXml(decode(data.xmlBytes(type)));
+    const chart = parseXml(data.xmlBytes(type));
     expect(chart.xpath(".//c:tx/c:strRef/c:strCache/c:pt/c:v")[0].text).toBe(label);
     if (kind === "category") expect(chart.xpath(".//c:cat/c:strRef/c:strCache/c:pt/c:v")[0].text).toBe(label);
-    const strings = query(parseXml(decode(unzipSync(data.xlsxBlob)["xl/sharedStrings.xml"])), ".//s:t");
+    const strings = query(parseXml(unzipSync(data.xlsxBlob)["xl/sharedStrings.xml"]), ".//s:t");
     expect(strings.map((node: any) => node.text)).toEqual(kind === "bubble" ? [label, "Size"] : [label]);
   });
 });
@@ -201,7 +200,7 @@ describe("Python string-subclass sequence membership", () => {
     if (hierarchical) data.categories.addCategory("Region").addSubCategory("East");
     else data.categories = ["East"];
     data.addSeries("Values", [1]);
-    const chart = new Chart(parseXml(decode(data.xmlBytes(XL_CHART_TYPE.COLUMN_CLUSTERED))), null);
+    const chart = new Chart(parseXml(data.xmlBytes(XL_CHART_TYPE.COLUMN_CLUSTERED)), null);
     const categories = chart.plots.at(0).categories;
     for (const sequence of [categories, ...categories.levels]) {
       const category = sequence.at(0);
@@ -255,9 +254,9 @@ describe("Gregorian category dates in both Excel epochs", () => {
     const data = new CategoryChartData();
     data.categories = [new Date("0050-01-01T00:00:00Z")];
     data.addSeries("Values", [1]);
-    const chart = parseXml(decode(data.xmlBytes(XL_CHART_TYPE.COLUMN_CLUSTERED)));
+    const chart = parseXml(data.xmlBytes(XL_CHART_TYPE.COLUMN_CLUSTERED));
     expect(chart.xpath(".//c:cat/c:numRef/c:numCache/c:pt/c:v")[0].text).toBe("-675697.0");
-    const sheet = parseXml(decode(unzipSync(data.xlsxBlob)["xl/worksheets/sheet1.xml"]));
+    const sheet = parseXml(unzipSync(data.xlsxBlob)["xl/worksheets/sheet1.xml"]);
     expect(query(sheet, './/s:c[@r="A2"]/s:v')[0].text).toBe("-675697");
   });
 });
@@ -266,25 +265,25 @@ describe("single Sheet1 XLSX package contract", () => {
   it.each([[1], ["label"]])("keeps worksheet metadata and relationships consistent for %j", (value) => {
     const parts = workbookParts([value]);
     expect(Object.keys(parts).filter((name) => name.startsWith("xl/worksheets/"))).toEqual(["xl/worksheets/sheet1.xml"]);
-    const workbook = parseXml(decode(parts["xl/workbook.xml"]));
+    const workbook = parseXml(parts["xl/workbook.xml"]);
     const sheets = query(workbook, ".//s:sheet");
     expect(sheets).toHaveLength(1);
     expect(sheets[0].get("name")).toBe("Sheet1");
     expect(sheets[0].get("sheetId")).toBe("1");
     expect(sheets[0].get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}id")).toBe("rId1");
-    const rels = parseXml(decode(parts["xl/_rels/workbook.xml.rels"]));
+    const rels = parseXml(parts["xl/_rels/workbook.xml.rels"]);
     const relationships = rels.xpath("./pr:Relationship").map((node: any) => [node.get("Id"), node.get("Target")]);
     expect(relationships).toEqual([
       ["rId1", "worksheets/sheet1.xml"], ["rId2", "theme/theme1.xml"], ["rId3", "styles.xml"],
       ...(typeof value === "string" ? [["rId4", "sharedStrings.xml"]] : []),
     ]);
-    const contentTypes = parseXml(decode(parts["[Content_Types].xml"]));
+    const contentTypes = parseXml(parts["[Content_Types].xml"]);
     expect(contentTypes.xpath('./ct:Override[@PartName="/xl/worksheets/sheet1.xml"]')[0].get("ContentType"))
       .toBe("application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml");
-    const app = parseXml(decode(parts["docProps/app.xml"]));
+    const app = parseXml(parts["docProps/app.xml"]);
     expect(query(app, ".//vt:i4")[0].text).toBe("1");
     expect(query(app, ".//vt:vector[@baseType='lpstr']/vt:lpstr").map((node: any) => node.text)).toEqual(["Sheet1"]);
-    const sheet = parseXml(decode(parts["xl/worksheets/sheet1.xml"]));
+    const sheet = parseXml(parts["xl/worksheets/sheet1.xml"]);
     expect(query(sheet, ".//s:sheetView")[0].get("tabSelected")).toBe("1");
   });
 });

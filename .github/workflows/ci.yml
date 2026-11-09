@@ -24,5 +24,7 @@ jobs:
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
-      - name: Browser bundle builds (no Node-only imports)
-        run: npx esbuild dist/index.js --bundle --platform=browser --format=esm --minify --outfile=bundle.js
+      # bundles for the browser (no Node-only imports), under the size budget, without the OLE icons
+      - run: npm run check:bundle
+      # npm pack -> install in a fresh Vite project -> vite build, and Node through both entries
+      - run: npm run check:pack

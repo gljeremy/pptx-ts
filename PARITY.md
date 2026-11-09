@@ -175,3 +175,8 @@ XML parts), `test/opc/roundtrip.test.ts` (open → save → reopen of every test
     `plot.categories.at(i)` are python's `[i]`; `chart.plots.slice(start, end)` is
     `plots[start:end]`. A `Category` is a `String` object, so `String(category)` and
     `` `${category}` `` give its label.
+18. **OLE object icons in browsers**: `addOleObject()` without an icon file shows python-pptx's
+    built-in icon for the file type. Those icons are about 260 KB, so the main entry doesn't
+    bundle them: in browsers, `import "pptx-ts/ole-icons"` once first (otherwise it raises
+    `KeyError` saying so). In Node they are read from the package's `templates/` directory, as
+    python-pptx reads `pptx/templates/`, and no import is needed.

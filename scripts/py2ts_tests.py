@@ -199,11 +199,20 @@ class T:
                 return "Number.MAX_SAFE_INTEGER"
             if mod == "os" and n.attr == "path":
                 return "$path"
+            if mod == "os" and n.attr in ("remove", "unlink"):
+                return "$os.remove"
         if isinstance(base, ast.Attribute) and isinstance(base.value, ast.Name) and self.module_aliases.get(base.value.id) == "os":
             return f"$path.{n.attr}"
         b = self.expr(base)
+        if n.attr == "__name__" and isinstance(base, ast.Call) and isinstance(base.func, ast.Name) and base.func.id == "type":
+            return f"$typename({self.expr(base.args[0])})"
+        if n.attr == "__name__" and isinstance(base, ast.Attribute) and base.attr == "__class__":
+            return f"$typename({self.expr(base.value)})"
         if n.attr == "__name__":
             return f"{b}.name"
+        if n.attr in ("inches", "pt", "emu", "cm", "mm", "centipoints"):
+            # pptx-ts lengths are plain numbers: Length's unit properties come from the shim
+            return f"$getattr({b}, {json_str(n.attr)})"
         if n.attr == "__class__":
             return f"$type({b})"
         if n.attr == "value" and isinstance(base, ast.Name) and base.id in self.excinfo_names:
@@ -442,7 +451,7 @@ class T:
                 return f"$list({self.expr(args[0])}).join({obj})"
             if meth == "format" and isinstance(f.value, ast.Constant):
                 return f"$pyformat({obj}, {self.kw_obj(kws) if kws else '[' + ', '.join(self.expr(a) for a in args) + ']'})"
-            if meth in DISPATCH and obj != "$path" and (meth in DISPATCH_ALWAYS or not self.src_receiver(f.value)):
+            if meth in DISPATCH and obj not in ("$path", "$os") and (meth in DISPATCH_ALWAYS or not self.src_receiver(f.value)):
                 return f"{DISPATCH[meth]}({obj}" + "".join(", " + p for p in ([self.expr(a) for a in args] + ([self.kw_obj(kws)] if kws else []))) + ")"
             m = attr_name(meth)
             if meth == "assert_has_calls" or meth.startswith("assert_"):
@@ -585,7 +594,16 @@ class T:
 
     def s_For(self, s, ind):
         p = "  " * ind
-        self.scopes.append(set(target_names(s.target)))
+        names = target_names(s.target)
+        outer = [n for n in names if self.is_local(n)]
+        if outer:
+            # a python loop variable outlives the loop: assign the function's variable (and
+            # declare the target's other names) instead of a block-scoped `const`
+            pre = [p + f"let {', '.join(ident(n) + ': any' for n in names if n not in outer)};"] if len(outer) < len(names) else []
+            self.scopes[-1].update(names)
+            head = f"for ({self.target(s.target)} of $list({self.expr(s.iter)})) {{"
+            return pre + [p + head] + self.body(s.body, ind + 1) + [p + "}"]
+        self.scopes.append(set(names))
         out = [p + f"for (const {self.target(s.target)} of $list({self.expr(s.iter)})) {{"] + self.body(s.body, ind + 1) + [p + "}"]
         self.scopes.pop()
         return out

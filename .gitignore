@@ -2,3 +2,4 @@ node_modules/
 dist/
 .vitest.json
 demo/pptx.js
+__pycache__/

@@ -4,13 +4,13 @@ A TypeScript port of [python-pptx](https://github.com/scanny/python-pptx) for cr
 reading and updating PowerPoint (.pptx) files in browsers and Node, with no server and no
 Python.
 
-**Status: stages 1–5 of 6: all of python-pptx's API.** Open any deck or start from the
-built-in template; slides, layouts, masters, notes and core properties; shapes, pictures,
-movies, connectors, freeforms, groups, placeholders, fills, lines, colors, hyperlinks and click
-actions; text frames with fonts and paragraphs, `fitText()`; tables; charts of every type
-python-pptx creates, with their embedded Excel workbooks. It runs in browsers as well as
-Node ([demo](demo/index.html)). See [PARITY.md](PARITY.md) for cross-check results and known
-output differences. Stage 6 ports upstream's acceptance tests; see the stage issues on GitHub.
+**Status: complete.** All of python-pptx's API: open any deck or start from the built-in
+template; slides, layouts, masters, notes and core properties; shapes, pictures, movies,
+connectors, freeforms, groups, placeholders, fills, lines, colors, hyperlinks and click actions;
+text frames with fonts and paragraphs, `fitText()`; tables; charts of every type python-pptx
+creates, with their embedded Excel workbooks. Upstream's unit tests and all 973 of its
+acceptance scenarios pass. It runs in browsers as well as Node ([demo](demo/index.html)). See
+[PARITY.md](PARITY.md) for cross-check results and known output differences.
 
 ```ts
 import { Presentation, BytesIO } from "pptx-ts";
@@ -43,6 +43,176 @@ const chart = slide2.shapes.addChart(XL_CHART_TYPE.COLUMN_CLUSTERED, Inches(1), 
 chart.hasLegend = true;
 chart.legend.position = XL_LEGEND_POSITION.BOTTOM;
 chart.plots.at(0).hasDataLabels = true;
+```
+
+## Getting started
+
+These are python-pptx's [Getting Started](https://python-pptx.readthedocs.io/en/latest/user/quickstart.html)
+examples in TypeScript. Each deck is identical, part by part, to python-pptx's output for the
+same steps (`test/quickstart.test.ts`).
+
+### Hello World!
+
+```ts
+import { Presentation } from "pptx-ts";
+
+const prs = Presentation();
+const titleSlideLayout = prs.slideLayouts.at(0);
+const slide = prs.slides.addSlide(titleSlideLayout);
+const title = slide.shapes.title!;
+const subtitle = slide.placeholders.get(1);
+
+title.text = "Hello, World!";
+subtitle.text = "python-pptx was here!";
+
+prs.save("test.pptx");
+```
+
+### Bullet slide
+
+```ts
+const prs = Presentation();
+const slide = prs.slides.addSlide(prs.slideLayouts.at(1));
+const shapes = slide.shapes;
+shapes.title!.text = "Adding a Bullet Slide";
+
+const tf = shapes.placeholders.get(1).textFrame;
+tf.text = "Find the bullet slide layout";
+
+let p = tf.addParagraph();
+p.text = "Use _TextFrame.text for first bullet";
+p.level = 1;
+
+p = tf.addParagraph();
+p.text = "Use _TextFrame.add_paragraph() for subsequent bullets";
+p.level = 2;
+
+prs.save("test.pptx");
+```
+
+Not every shape can hold text; `shape.hasTextFrame` says whether it can. A text frame always
+has at least one paragraph. `shape.text` and `textFrame.text` set the text of the first
+paragraph and remove the others.
+
+### `addTextbox()`
+
+```ts
+import { Presentation, Inches, Pt } from "pptx-ts";
+
+const prs = Presentation();
+const slide = prs.slides.addSlide(prs.slideLayouts.at(6)); // blank layout
+const txBox = slide.shapes.addTextbox(Inches(1), Inches(1), Inches(1), Inches(1));
+const tf = txBox.textFrame;
+tf.text = "This is text inside a textbox";
+
+let p = tf.addParagraph();
+p.text = "This is a second paragraph that's bold";
+p.font.bold = true;
+
+p = tf.addParagraph();
+p.text = "This is a third paragraph that's big";
+p.font.size = Pt(40);
+
+prs.save("test.pptx");
+```
+
+### `addPicture()`
+
+```ts
+const imgPath = "monty-truth.png";                  // or a Uint8Array, or a BytesIO
+
+const prs = Presentation();
+const slide = prs.slides.addSlide(prs.slideLayouts.at(6));
+slide.shapes.addPicture(imgPath, Inches(1), Inches(1));                       // native size
+slide.shapes.addPicture(imgPath, Inches(5), Inches(1), null, Inches(5.5));    // height=, aspect kept
+
+prs.save("test.pptx");
+```
+
+### `addShape()`
+
+```ts
+import { Presentation, Inches, MSO_SHAPE } from "pptx-ts";
+
+const prs = Presentation();
+const slide = prs.slides.addSlide(prs.slideLayouts.at(5)); // title only
+const shapes = slide.shapes;
+shapes.title!.text = "Adding an AutoShape";
+
+let left = Inches(0.93); // 0.93" centers this overall set of shapes
+const top = Inches(3.0);
+let width = Inches(1.75);
+const height = Inches(1.0);
+
+let shape = shapes.addShape(MSO_SHAPE.PENTAGON, left, top, width, height);
+shape.text = "Step 1";
+
+left = left + width - Inches(0.4); // lengths are numbers, so arithmetic just works
+width = Inches(2.0); // chevrons need more width for visual balance
+for (let n = 2; n < 6; n++) {
+  shape = shapes.addShape(MSO_SHAPE.CHEVRON, left, top, width, height);
+  shape.text = `Step ${n}`;
+  left = left + width - Inches(0.4);
+}
+
+prs.save("test.pptx");
+```
+
+`MSO_SHAPE` has every auto shape type python-pptx has (`MSO_SHAPE.ROUNDED_RECTANGLE`,
+`MSO_SHAPE.CHEVRON`, ...).
+
+### `addTable()`
+
+```ts
+const prs = Presentation();
+const slide = prs.slides.addSlide(prs.slideLayouts.at(5));
+slide.shapes.title!.text = "Adding a Table";
+
+const table = slide.shapes.addTable(2, 2, Inches(2.0), Inches(2.0), Inches(6.0), Inches(0.8)).table;
+
+// set column widths
+table.columns.at(0).width = Inches(2.0);
+table.columns.at(1).width = Inches(4.0);
+
+// write column headings
+table.cell(0, 0).text = "Foo";
+table.cell(0, 1).text = "Bar";
+
+// write body cells
+table.cell(1, 0).text = "Baz";
+table.cell(1, 1).text = "Qux";
+
+prs.save("test.pptx");
+```
+
+### Extract all text from the slides in a presentation
+
+```ts
+const prs = Presentation(pathToPresentation);
+
+// textRuns will be populated with a list of strings, one for each text run in the presentation
+const textRuns: string[] = [];
+for (const slide of prs.slides) {
+  for (const shape of slide.shapes) {
+    if (!shape.hasTextFrame) continue;
+    for (const paragraph of shape.textFrame.paragraphs) {
+      for (const run of paragraph.runs) textRuns.push(run.text);
+    }
+  }
+}
+```
+
+### In the browser
+
+`Presentation()` takes a `Uint8Array` (for example from a file input) and `save()` writes to a
+`BytesIO`, so no file system is needed:
+
+```ts
+const prs = Presentation(new Uint8Array(await file.arrayBuffer()));
+// ... edit ...
+const out = new BytesIO();
+prs.save(out);
+const blob = new Blob([out.getvalue()], { type: "application/vnd.openxmlformats-officedocument.presentationml.presentation" });
 ```
 
 ### From python-pptx
@@ -91,6 +261,16 @@ are recorded in `test/fixups.json`, so the files can be regenerated:
 scripts/regen_ported_tests.sh ../python-pptx python   # files listed in test/PORTED
 ```
 
+Upstream's behave acceptance tests run too: `test/features/` holds its 54 `.feature` files and
+test decks, `scripts/py2ts_steps.py` translates its step definitions, and
+`test/features/runner.ts` is a small Gherkin runner for vitest. All 973 scenarios pass, the
+same number behave runs for python-pptx:
+
+```bash
+scripts/regen_features.sh ../python-pptx python       # test/features/steps/*.ts
+npx vitest run test/features
+```
+
 `scripts/crosscheck/` compares pptx-ts with python-pptx on every upstream test deck (what the
 API reports for slides, layouts, masters, shapes, placeholders, notes and core properties,
 and the bytes of every part after re-saving):
@@ -113,22 +293,26 @@ upstream's structure and docstrings) and are then reviewed and corrected by hand
 
 ## Performance
 
-Best of 5 (best of 3 for the 1000-shape case), Node 22 vs CPython 3.13 + lxml 5.3, on
-`cht-charts.pptx` from python-pptx's test files (`bench/bench_prs.*`, `bench/bench_opc.*`):
+Best of 5 (best of 3 for the larger cases), Node 22 vs CPython 3.13 + lxml 5.3
+(`bench/bench_prs.*`, `bench/bench_opc.*`; the single deck is `cht-charts.pptx` from
+python-pptx's test files, the 60 decks are its acceptance test decks):
 
 | Workload | python-pptx | pptx-ts |
 | --- | ---: | ---: |
-| build a 100-slide deck from the default template | 297.5 ms | 120.9 ms |
-| add 1000 text boxes with text to a slide, save | 309.9 ms | 150.5 ms |
-| add 50 column charts (12 categories, 3 series) with workbooks, save | 364.0 ms | 320.0 ms |
-| open + save a presentation (all XML parts parsed) | 10.9 ms | 15.2 ms |
+| build a 100-slide deck from the default template | 297.9 ms | 121.4 ms |
+| build a 200-slide deck, each slide with title, 4 bullets, a filled shape and a picture | 1216.9 ms | 491.1 ms |
+| add 1000 text boxes with text to a slide, save | 311.3 ms | 146.2 ms |
+| add 10,000 shapes to a slide, save | 4094.3 ms | 2233.0 ms |
+| add 50 column charts (12 categories, 3 series) with workbooks, save | 365.2 ms | 329.7 ms |
+| open + save a presentation (all XML parts parsed) | 10.8 ms | 15.1 ms |
+| open + save 60 different decks | 942.2 ms | 902.4 ms |
 | parse + serialize the deck's XML parts 20 times | 24.3 ms | 46.2 ms |
 
-Everything above the XML layer is about twice as fast as python-pptx. Charts gain less: about
+Building decks is two to two and a half times as fast as python-pptx. Charts gain less: about
 40% of that workload is deflating the 50 embedded workbooks and then the deck, which python
-does in C zlib. The XML parser itself is
-pure JS and runs at about half the speed of lxml's C parser, so opening a deck is a few
-milliseconds slower.
+does in C zlib. Opening and saving decks is about even across the 60 test decks, and a few
+milliseconds slower on the chart deck: the XML parser is pure JS and runs at about half the
+speed of lxml's C parser.
 
 ### Why not WebAssembly?
 
@@ -154,6 +338,7 @@ python scripts/image_golden.py test/fixtures/images_pillow.json test/fixtures/im
 python scripts/text_golden.py test/test_files/calibriz.ttf test/fixtures/text_golden.json
 python scripts/gen_unitdata.py ../python-pptx test/oxml/unitdata
 npm run demo:build                                              # demo/pptx.js for demo/index.html
+python scripts/quickstart_golden.py ../python-pptx test/fixtures/quickstart
 ```
 
 CI (`.github/workflows/ci.yml`) runs typecheck, tests, build and a browser bundle on Node 20

@@ -15,6 +15,7 @@ import { ANY, _Call, camel, CallList, isMock, KW, setModules, setPyEq, setShow, 
 import * as utilMod from "../src/util.js";
 export * from "./mock.js";
 export { BytesIO };
+export { pyEval as $pyEval } from "./features/pyeval.js";
 
 const GETITEM = Symbol.for("py.getitem");
 const LEN = Symbol.for("py.len");
@@ -544,6 +545,13 @@ export function $next(it: Iterator<any>, ...dflt: any[]): any {
   return r.value;
 }
 
+/** python `type(v).__name__` for the builtin types whose JS names differ */
+export function $typename(v: any): string {
+  if (typeof v === "string") return "str";
+  if (typeof v === "boolean") return "bool";
+  if (v === null || v === undefined) return "NoneType";
+  return $type(v).name;
+}
 export const $type = (v: any) => (v === null || v === undefined ? null : Object.getPrototypeOf(Object(v)).constructor);
 
 /** itertools.product */
@@ -755,15 +763,23 @@ export const $path = {
     const e = nodePath.extname(p);
     return [p.slice(0, p.length - e.length), e];
   },
-  exists: (p: string) => {
-    try {
-      (globalThis as any).process.getBuiltinModule("node:fs").statSync(p);
-      return true;
-    } catch {
-      return false;
-    }
-  },
+  exists: (p: string) => statOrNull(p) !== null,
+  isfile: (p: string) => statOrNull(p)?.isFile() === true,
+  isdir: (p: string) => statOrNull(p)?.isDirectory() === true,
+  getsize: (p: string) => nodeFs().statSync(p).size,
 };
+
+const nodeFs = () => (globalThis as any).process.getBuiltinModule("node:fs");
+function statOrNull(p: string): any {
+  try {
+    return nodeFs().statSync(p);
+  } catch {
+    return null;
+  }
+}
+
+/** the `os` functions the tests use (os.path is $path) */
+export const $os = { remove: (p: string) => nodeFs().unlinkSync(p), path: $path };
 
 export const $sys = { maxsize: Number.MAX_SAFE_INTEGER, version_info: [3, 12, 0] };
 
@@ -775,7 +791,9 @@ export function $open(file: string, mode = "r"): any {
   const fs = (globalThis as any).process.getBuiltinModule("node:fs");
   if (mode.includes("w")) {
     const b = new BytesIO();
+    // like a python file, the bytes reach the disk on close(), which leaving `with` calls
     (b as any).close = () => fs.writeFileSync(file, b.getvalue());
+    (b as any).__exit__ = () => (b as any).close();
     return b;
   }
   const bytes = new Uint8Array(fs.readFileSync(file));
@@ -1097,7 +1115,7 @@ export const $datetime = {
       t.setUTCFullYear(y);
       return t;
     },
-    { now: (_tz?: any) => new PyDatetime(Date.now()) },
+    { now: (_tz?: any) => new PyDatetime(Date.now()), utcnow: () => new PyDatetime(Date.now()) },
   ),
   timedelta: (kw: any = {}) => {
     const o = kw?.kwargs ?? kw;

@@ -3,7 +3,7 @@
 /* eslint-disable */
 // @ts-nocheck
 import * as $py from "../pyshim.js";
-import { $assert, $assertEqual, $call, $cmp, $eq, $get, $hasattr, $is, $isinstance, $kw, $list, $mod, $newm, $orv, $raises, $truthy, $type, call, pytestClass } from "../pyshim.js";
+import { $assert, $assertEqual, $call, $cmp, $eq, $get, $hasattr, $is, $isinstance, $kw, $list, $mod, $newm, $orv, $raises, $truthy, $typename, call, pytestClass } from "../pyshim.js";
 import { AttributeError, FileNotFoundError, IndexError, KeyError, NotImplementedError, ValueError, ZeroDivisionError } from "../../src/errors.js";
 import { InvalidXmlError, PackageNotFoundError, PythonPptxError } from "../../src/exc.js";
 import { defineChildren } from "../../src/oxml/xmlchemy.js";
@@ -37,7 +37,7 @@ const DescribeCustomElementClass: any = {
   },
   tests: [
     { name: "it_has_the_MetaOxmlElement_metaclass", skip: "python metaclass; TS classes call defineChildren() instead", args: [], fn: (self: any): any => {
-        $assertEqual($type(CT_Parent).name, "MetaOxmlElement");
+        $assertEqual($typename(CT_Parent), "MetaOxmlElement");
       } },
   ],
 };

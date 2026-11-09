@@ -129,8 +129,11 @@ export class Worksheet {
     if (!this._checkDimensions(row, col)) return -1;
     let error = 0;
     if (s.length > XLS_STRMAX) {
-      s = s.slice(0, XLS_STRMAX);
-      error = -2;
+      const characters = [...s];
+      if (characters.length > XLS_STRMAX) {
+        s = characters.slice(0, XLS_STRMAX).join("");
+        error = -2;
+      }
     }
     this._setCell(row, col, { kind: "string", index: this._workbook._strTable.indexOf(s), format });
     return error;

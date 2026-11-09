@@ -127,6 +127,7 @@ export class _BaseAxis {
   }
 
   set majorTickMark(value: any) {
+    value = XL_TICK_MARK(value);
     this._element._removeMajorTickMark();
     if (value === XL_TICK_MARK.CROSS) {
       return;
@@ -179,6 +180,7 @@ export class _BaseAxis {
   }
 
   set minorTickMark(value: any) {
+    value = XL_TICK_MARK(value);
     this._element._removeMinorTickMark();
     if (value === XL_TICK_MARK.CROSS) {
       return;
@@ -477,6 +479,7 @@ export class ValueAxis extends _BaseAxis {
   }
 
   set crosses(value: any) {
+    value = XL_AXIS_CROSSES(value);
     const crossXAx = this._crossXAx;
     if (value === XL_AXIS_CROSSES.CUSTOM) {
       if (crossXAx.crossesAt !== null) {

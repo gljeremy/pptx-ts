@@ -4,7 +4,8 @@ import { BytesIO } from "../../src/fileio.js";
 import { BubbleChartData, Category, CategoryChartData, XyChartData } from "../../src/chart/data.js";
 import { Chart } from "../../src/chart/chart.js";
 import { PySequence, ElementProxy } from "../../src/shared.js";
-import { XL_CHART_TYPE } from "../../src/enum/chart.js";
+import { XL_AXIS_CROSSES, XL_CHART_TYPE, XL_TICK_MARK } from "../../src/enum/chart.js";
+import { ValueAxis } from "../../src/chart/axis.js";
 import { parseXml } from "../../src/oxml/parser.js";
 import { _nsmap } from "../../src/oxml/ns.js";
 import { xpath } from "../../src/oxml/xpath.js";
@@ -99,6 +100,98 @@ describe("python-pptx integer chart-type equivalence", () => {
     const bubble = new BubbleChartData();
     bubble.addSeries("Values").addDataPoint(1, 2, 3);
     expect(parseXml(decode(bubble.xmlBytes(87))).xpath(".//c:bubble3D")[0].get("val")).toBe("1");
+  });
+});
+
+describe("python-pptx integer axis-enum setter contract", () => {
+  it.each(["column", "bar", "date", "scatter"] as const)("preserves tick and crossing transitions on %s axes", (kind) => {
+    for (const integers of [false, true]) {
+      let data: CategoryChartData | XyChartData;
+      if (kind === "scatter") {
+        data = new XyChartData();
+        data.addSeries("Values").addDataPoint(1, 2);
+      } else {
+        data = new CategoryChartData();
+        data.categories = kind === "date" ? [new Date("2024-01-01T00:00:00Z")] : ["East"];
+        data.addSeries("Values", [1]);
+      }
+      const type = kind === "scatter" ? XL_CHART_TYPE.XY_SCATTER : kind === "bar" ? XL_CHART_TYPE.BAR_CLUSTERED : XL_CHART_TYPE.COLUMN_CLUSTERED;
+      const chart = new Chart(parseXml(decode(data.xmlBytes(type))), null);
+      for (const axis of [chart.categoryAxis, chart.valueAxis]) {
+        for (const property of ["majorTickMark", "minorTickMark"] as const) {
+          for (const member of [XL_TICK_MARK.OUTSIDE, XL_TICK_MARK.CROSS, XL_TICK_MARK.INSIDE, XL_TICK_MARK.NONE, XL_TICK_MARK.CROSS]) {
+            axis[property] = integers ? member.value : member;
+            expect(axis[property]).toBe(member);
+            const elements = axis._element.xpath(`./c:${property}`);
+            if (member === XL_TICK_MARK.CROSS) expect(elements).toHaveLength(0);
+            else {
+              expect(elements).toHaveLength(1);
+              expect(elements[0].get("val")).toBe(member.xmlValue);
+            }
+          }
+        }
+        if (!(axis instanceof ValueAxis)) continue;
+        axis.crosses = integers ? -4114 : XL_AXIS_CROSSES.CUSTOM;
+        expect(axis.crosses).toBe(XL_AXIS_CROSSES.CUSTOM);
+        expect(axis.crossesAt).toBe(0);
+        axis.crossesAt = 2.4;
+        const crossing = axis._crossXAx.crossesAt;
+        axis.crosses = integers ? -4114 : XL_AXIS_CROSSES.CUSTOM;
+        expect(axis.crossesAt).toBe(2.4);
+        expect(axis._crossXAx.crossesAt).toBe(crossing);
+        for (const member of [XL_AXIS_CROSSES.MINIMUM, XL_AXIS_CROSSES.MAXIMUM, XL_AXIS_CROSSES.AUTOMATIC]) {
+          axis.crosses = integers ? member.value : member;
+          expect(axis.crosses).toBe(member);
+          expect(axis.crossesAt).toBeNull();
+          expect(axis._crossXAx.crosses.get("val")).toBe(member.xmlValue);
+        }
+      }
+    }
+  });
+});
+
+describe("XlsxWriter Unicode code-point string limit", () => {
+  const prefix = "a".repeat(32766);
+  it.each([
+    ["label", "label", 0],
+    ["a".repeat(32767), "a".repeat(32767), 0],
+    [prefix + "😀", prefix + "😀", 0],
+    [prefix + "😀x", prefix + "😀", -2],
+    ["😀".repeat(32767), "😀".repeat(32767), 0],
+    ["😀".repeat(32768), "😀".repeat(32767), -2],
+    ["a".repeat(32768), "a".repeat(32767), -2],
+  ] as const)("preserves complete characters in string case %#", (input, expected, status) => {
+    const file = new BytesIO();
+    const workbook = new Workbook(file);
+    expect(workbook.addWorksheet().write(0, 0, input)).toBe(status);
+    workbook.close();
+    const parts = unzipSync(file.getvalue());
+    const strings = query(parseXml(decode(parts["xl/sharedStrings.xml"])), ".//s:t");
+    expect(strings.map((node: any) => node.text)).toEqual([expected]);
+  });
+
+  it.each(["category", "xy", "bubble"] as const)("preserves a full-length supplementary character in %s chart labels", (kind) => {
+    const label = prefix + "😀";
+    let data: CategoryChartData | XyChartData | BubbleChartData;
+    let type = XL_CHART_TYPE.COLUMN_CLUSTERED;
+    if (kind === "category") {
+      data = new CategoryChartData();
+      data.categories = [label];
+      data.addSeries(label, [1]);
+    } else if (kind === "xy") {
+      data = new XyChartData();
+      data.addSeries(label).addDataPoint(1, 2);
+      type = XL_CHART_TYPE.XY_SCATTER;
+    } else {
+      data = new BubbleChartData();
+      data.addSeries(label).addDataPoint(1, 2, 3);
+      type = XL_CHART_TYPE.BUBBLE;
+    }
+    const chart = parseXml(decode(data.xmlBytes(type)));
+    expect(chart.xpath(".//c:tx/c:strRef/c:strCache/c:pt/c:v")[0].text).toBe(label);
+    if (kind === "category") expect(chart.xpath(".//c:cat/c:strRef/c:strCache/c:pt/c:v")[0].text).toBe(label);
+    const strings = query(parseXml(decode(unzipSync(data.xlsxBlob)["xl/sharedStrings.xml"])), ".//s:t");
+    expect(strings.map((node: any) => node.text)).toEqual(kind === "bubble" ? [label, "Size"] : [label]);
   });
 });
 

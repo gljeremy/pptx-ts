@@ -20,6 +20,29 @@ const cases: [string, string, string, "append" | "insert" | "addnext", string, (
     '<a:root xmlns:a="http://a" xmlns:b="http://b"><a:k/><a:x><b:y/></a:x></a:root>', ["a", "b"]],
 ];
 
+it.each(["append", "extend", "insert", "replace", "addprevious", "addnext"] as const)(
+  "keeps a child's namespace shadowing out of sibling scope on %s (lxml contract)",
+  (how) => {
+    const parent = parseXml('<a:root xmlns:a="http://a"><a:k/></a:root>');
+    const child = parseXml('<q:x xmlns:q="http://a"><q:y xmlns:q="http://b"><q:n/></q:y><q:z/></q:x>');
+    const anchor = parent._children[0];
+    if (how === "append") parent.append(child);
+    else if (how === "extend") parent.extend([child]);
+    else if (how === "insert") parent.insert(0, child);
+    else if (how === "replace") parent.replace(anchor, child);
+    else if (how === "addprevious") anchor.addprevious(child);
+    else anchor.addnext(child);
+    expect([...child.iter()].map((element) => element.prefix)).toEqual(["a", "q", "q", "a"]);
+    expect(child.xpath("name(.)")).toBe("a:x");
+    expect(child.xpath("name(./*[1])")).toBe("q:y");
+    expect(child.xpath("name(./*[1]/*[1])")).toBe("q:n");
+    expect(child.xpath("name(./*[2])")).toBe("a:z");
+    const moved = '<a:x><q:y xmlns:q="http://b"><q:n/></q:y><a:z/></a:x>';
+    const children = how === "replace" ? moved : how === "insert" || how === "addprevious" ? `${moved}<a:k/>` : `<a:k/>${moved}`;
+    expect(tostring(parent)).toBe(`<a:root xmlns:a="http://a">${children}</a:root>`);
+  },
+);
+
 for (const [name, parentXml, childXml, how, expected, prefixes] of cases) {
   it(`strips redundant namespace declarations on ${how}: ${name}`, () => {
     const parent = parseXml(parentXml);

@@ -501,14 +501,8 @@ export function excelDateNumber(d: Date): number {
 
 /** python `"%.16G" % x`. */
 export function formatG16(x: number): string {
-  return formatG(x, 16);
-}
-
-/** python `"%.{p}G" % x` (`"%g"` when `p` is 6): exponent form outside 1e-4 <= |x| < 10^p. */
-export function formatG(x: number, p = 6): string {
   if (x === 0) return Object.is(x, -0) ? "-0" : "0";
   const magnitude = Math.abs(x);
-  let exp = Number(magnitude.toExponential().split("e")[1]);
   const bits = new DataView(new ArrayBuffer(8));
   bits.setFloat64(0, magnitude);
   const hi = bits.getUint32(0);
@@ -519,19 +513,21 @@ export function formatG(x: number, p = 6): string {
   let denominator = 1n;
   if (shift >= 0) numerator <<= BigInt(shift);
   else denominator <<= BigInt(-shift);
-  const scale = p - 1 - exp;
+  let exp = numerator.toString().length - denominator.toString().length;
+  if (exp >= 0 ? numerator < denominator * 10n ** BigInt(exp) : numerator * 10n ** BigInt(-exp) < denominator) exp -= 1;
+  const scale = 15 - exp;
   if (scale >= 0) numerator *= 10n ** BigInt(scale);
   else denominator *= 10n ** BigInt(-scale);
   let rounded = numerator / denominator;
   const remainder = (numerator % denominator) * 2n;
   if (remainder > denominator || (remainder === denominator && rounded % 2n !== 0n)) rounded += 1n;
   let digits = rounded.toString();
-  if (digits.length > p) {
+  if (digits.length > 16) {
     digits = digits.slice(0, -1);
     exp += 1;
   }
   const sign = x < 0 ? "-" : "";
-  if (exp < -4 || exp >= p) {
+  if (exp < -4 || exp >= 16) {
     const mant = `${digits[0]}.${digits.slice(1)}`.replace(/\.?0+$/, "").replace(/\.$/, "");
     return `${sign}${mant}E${exp < 0 ? "-" : "+"}${String(Math.abs(exp)).padStart(2, "0")}`;
   }

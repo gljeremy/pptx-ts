@@ -408,7 +408,10 @@ export class XmlElement implements Iterable<XmlNode> {
           }
         }
         // a declaration this element keeps shadows any remap of its prefix
-        if (remap && kept) for (const [p] of kept) remap.delete(p);
+        if (remap && kept) {
+          remap = new Map(remap);
+          for (const [p] of kept) remap.delete(p);
+        }
         e._nsDecls = kept;
       }
       if (remap && remap.has(e._prefix)) e._prefix = remap.get(e._prefix)!;

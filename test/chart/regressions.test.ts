@@ -2,11 +2,13 @@ import { describe, expect, it } from "vitest";
 import { unzipSync } from "fflate";
 import { BytesIO } from "../../src/fileio.js";
 import { BubbleChartData, Category, CategoryChartData, XyChartData } from "../../src/chart/data.js";
+import { Chart } from "../../src/chart/chart.js";
+import { PySequence, ElementProxy } from "../../src/shared.js";
 import { XL_CHART_TYPE } from "../../src/enum/chart.js";
 import { parseXml } from "../../src/oxml/parser.js";
 import { _nsmap } from "../../src/oxml/ns.js";
 import { xpath } from "../../src/oxml/xpath.js";
-import { formatG, formatG16, Workbook } from "../../src/xlsx/workbook.js";
+import { formatG16, Workbook } from "../../src/xlsx/workbook.js";
 
 const decode = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
 const query = (node: any, expression: string): any => xpath(node, expression, {
@@ -34,6 +36,9 @@ describe("Python percent-G rounding contract", () => {
     [0.0001, "0.0001"],
     [0.00001, "1E-05"],
     [1e16, "1E+16"],
+    [1e23, "9.999999999999999E+22"],
+    [-1e23, "-9.999999999999999E+22"],
+    [999999999999999.9, "999999999999999.9"],
     [Number.MIN_VALUE, "4.940656458412465E-324"],
     [Number.MAX_VALUE, "1.797693134862316E+308"],
     [0, "0"],
@@ -42,22 +47,11 @@ describe("Python percent-G rounding contract", () => {
     expect(formatG16(value)).toBe(expected);
   });
 
-  it.each([
-    [1000005, "1E+06"],
-    [1000015, "1.00002E+06"],
-    [-1000005, "-1E+06"],
-    [-1000015, "-1.00002E+06"],
-    [999999.5, "1E+06"],
-    [1.25, "1.25"],
-  ] as const)("formats default %G for %s", (value, expected) => {
-    expect(formatG(value)).toBe(expected);
-  });
-
   it("writes ties-to-even values into the serialized worksheet", () => {
-    const parts = workbookParts([1000000000000000.5, -1000000000000001.5]);
+    const parts = workbookParts([1000000000000000.5, -1000000000000001.5, 1e23, -1e23]);
     const sheet = parseXml(decode(parts["xl/worksheets/sheet1.xml"]));
     expect(query(sheet, ".//s:v").map((node: any) => node.text)).toEqual([
-      "1000000000000000", "-1000000000000002",
+      "1000000000000000", "-1000000000000002", "9.999999999999999E+22", "-9.999999999999999E+22",
     ]);
   });
 });
@@ -105,6 +99,44 @@ describe("python-pptx integer chart-type equivalence", () => {
     const bubble = new BubbleChartData();
     bubble.addSeries("Values").addDataPoint(1, 2, 3);
     expect(parseXml(decode(bubble.xmlBytes(87))).xpath(".//c:bubble3D")[0].get("val")).toBe("1");
+  });
+});
+
+describe("Python string-subclass sequence membership", () => {
+  it.each([false, true])("compares category labels by value, hierarchical=%s", (hierarchical) => {
+    const data = new CategoryChartData();
+    if (hierarchical) data.categories.addCategory("Region").addSubCategory("East");
+    else data.categories = ["East"];
+    data.addSeries("Values", [1]);
+    const chart = new Chart(parseXml(decode(data.xmlBytes(XL_CHART_TYPE.COLUMN_CLUSTERED))), null);
+    const categories = chart.plots.at(0).categories;
+    for (const sequence of [categories, ...categories.levels]) {
+      const category = sequence.at(0);
+      expect(sequence.includes(category.label)).toBe(true);
+      expect(sequence.includes(category)).toBe(true);
+      expect(sequence.includes(new String(category.label))).toBe(true);
+      expect(sequence.includes("Missing")).toBe(false);
+      expect(sequence.includes({ toString: () => category.label })).toBe(false);
+    }
+  });
+
+  it("unwraps either string operand without changing object equality", () => {
+    const element = parseXml('<p:sp xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>');
+    const object = { label: "East" };
+    const items: unknown[] = ["East", new String("West"), object, new ElementProxy(element)];
+    const sequence = new class extends PySequence<unknown> {
+      at(index: number) { return items[index]; }
+      get length() { return items.length; }
+    }();
+    expect(sequence.includes(new String("East"))).toBe(true);
+    expect(sequence.includes("West")).toBe(true);
+    expect(sequence.includes(new String("West"))).toBe(true);
+    expect(sequence.includes(object)).toBe(true);
+    expect(sequence.includes({ label: "East" })).toBe(false);
+    expect(sequence.includes(new ElementProxy(element))).toBe(true);
+    expect(sequence.includes(new ElementProxy(parseXml('<p:sp xmlns:p="http://schemas.openxmlformats.org/presentationml/2006/main"/>')))).toBe(false);
+    expect(sequence.includes(null)).toBe(false);
+    expect(sequence.includes(undefined)).toBe(false);
   });
 });
 

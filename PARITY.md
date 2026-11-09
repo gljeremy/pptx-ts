@@ -108,7 +108,7 @@ XML parts), `test/opc/roundtrip.test.ts` (open → save → reopen of every test
 | `Describe_Stream.it_can_construct_from_a_path` (`tests/text/test_fonts.py`) | patches python's builtin `open()`; files are read through pptx-ts's fileio |
 | `DescribeAdjustmentCollection.it_should_raise_on_bad_index` (`0.0` index asserts dropped) | JS has one number type, so `0.0` is the index `0` |
 | keyword-argument asserts on un-spec'd mocks (`Hyperlink` address, placeholder `get(idx=...)`) | TS has no keyword arguments; the positional call is asserted |
-| `_OleObjectElementCreator.it_resolves_the_icon_image_file_to_help`, movie poster-frame `io.BytesIO` patches | bundled icons are opened from memory, and `BytesIO` comes from pptx-ts's fileio |
+| `_OleObjectElementCreator.it_resolves_the_icon_image_file_to_help`, movie poster-frame `io.BytesIO` patches | `BytesIO` comes from pptx-ts's fileio; see [browser usage](README.md#in-the-browser) for OLE icon loading |
 | `DescribeTextFitter.it_can_determine_the_best_fit_font_size` (`ANY` for self) | python's tuple-subclass `__init__` mock records no `self`; the TS constructor's does |
 | `Describe_BubbleChartXmlWriter.it_can_generate_xml_for_bubble_charts`, `Describe_RadarChartXmlWriter.it_can_generate_xml_for_a_radar_chart` | the snippets write python floats such as `11.0`; compared with integral floats written as ints (item 15) |
 | `Describe_BaseWorkbookWriter.it_can_generate_a_chart_data_Excel_blob` (`io.BytesIO` patch) | `BytesIO` comes from pptx-ts's fileio |
@@ -140,8 +140,7 @@ XML parts), `test/opc/roundtrip.test.ts` (open → save → reopen of every test
 9. **Dates**: python's naive `datetime` values are `Date`s holding the wall-clock time in UTC
    (read with `getUTC*()`); core-property dates are written from those UTC fields.
 10. **`Presentation()` with no argument** opens the default template from bytes bundled in the
-    library (python opens `pptx/templates/default.pptx` from disk). The OLE-object icons are
-    bundled the same way.
+    library (python opens `pptx/templates/default.pptx` from disk).
 11. **Images**: format, pixel size and DPI come from the image headers rather than Pillow,
     matching Pillow 11.0's values (including its quirks: a JPEG JFIF density counts only when
     its unit is dots per inch; WMF and most EMF files report a single dpi value, which
@@ -175,8 +174,5 @@ XML parts), `test/opc/roundtrip.test.ts` (open → save → reopen of every test
     `plot.categories.at(i)` are python's `[i]`; `chart.plots.slice(start, end)` is
     `plots[start:end]`. A `Category` is a `String` object, so `String(category)` and
     `` `${category}` `` give its label.
-18. **OLE object icons in browsers**: `addOleObject()` without an icon file shows python-pptx's
-    built-in icon for the file type. Those icons are about 260 KB, so the main entry doesn't
-    bundle them: in browsers, `import "pptx-ts/ole-icons"` once first (otherwise it raises
-    `KeyError` saying so). In Node they are read from the package's `templates/` directory, as
-    python-pptx reads `pptx/templates/`, and no import is needed.
+18. **OLE object icons in browsers**: see [browser usage](README.md#in-the-browser) for the
+    optional icon entry and the difference from Node.

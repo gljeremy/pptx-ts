@@ -1,8 +1,7 @@
 // Pack the library with `npm pack`, install the tarball in a fresh Vite project (as a user
 // would) and check it: `vite build` bundles it for the browser with the OLE icons in their own
-// chunk, and Node opens, edits and saves decks through both package entries. The browser side of
-// the same app (file input -> edit -> download) was checked by hand; see the packaging section of
-// README.md.
+// chunk, and Node opens, edits and saves decks through both package entries.
+// This checks browser build compatibility, not the file-input UI or a download.
 // Usage: npm run build && node scripts/check_pack.mjs
 import { execSync } from "node:child_process";
 import { cpSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from "node:fs";

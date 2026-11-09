@@ -226,8 +226,9 @@ import "pptx-ts/ole-icons";                 // or: await import("pptx-ts/ole-ico
 slide.shapes.addOleObject(xlsxBytes, PROG_ID.XLSX, Inches(1), Inches(1));
 ```
 
-Node reads the icons from the package's files, so it needs no import. `npm run check:bundle` and
-`npm run check:pack` check the bundle, and a packed tarball in a fresh Vite project, in CI.
+Without this import or a custom icon file, browser `addOleObject()` raises `KeyError`
+before embedding the attachment. Node reads the icons from the package's files, so it needs
+no import.
 
 ### From python-pptx
 
@@ -357,5 +358,6 @@ npm run check:pack                                              # npm pack -> fr
 python scripts/quickstart_golden.py ../python-pptx test/fixtures/quickstart
 ```
 
-CI (`.github/workflows/ci.yml`) runs typecheck, tests, build and a browser bundle on Node 20
-and 22, Linux and Windows.
+CI runs typecheck, tests, build, browser bundle checks (including the gzip size budget and
+OLE icon registration), and the packed-tarball check in a fresh Vite project. See
+[the workflow](.github/workflows/ci.yml) for the Node and OS matrix.

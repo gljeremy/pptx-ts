@@ -145,5 +145,31 @@
       "classMock(request, \"pptx.fileio.BytesIO\");",
       "the TS module imports BytesIO from pptx-ts's fileio rather than using io.BytesIO; patch it there"
     ]
+  ],
+  "test/features/steps/category.ts": [
+    [
+      "$assertEqual(type_name, \"tuple\", $mod(\"got %s\", type_name));\n  $assertEqual(length",
+      "$assertEqual(type_name, \"Array\", $mod(\"got %s\", type_name));\n  $assertEqual(length",
+      "python tuples are JS arrays (PARITY.md, Python to TypeScript)"
+    ],
+    [
+      "    $assertEqual(type_name, \"tuple\", $mod(\"got %s\", type_name));",
+      "    $assertEqual(type_name, \"Array\", $mod(\"got %s\", type_name));",
+      "python tuples are JS arrays (PARITY.md, Python to TypeScript)"
+    ]
+  ],
+  "test/features/steps/text.ts": [
+    [
+      "  line_spacing = context.paragraph.lineSpacing;",
+      "  line_spacing = context.paragraph.lineSpacing;\n  if (exception !== null && line_spacing !== null) {\n    $assert(line_spacing === 1.5 || line_spacing === 2.0);\n    return;\n  }",
+      "line multiples are plain numbers rather than Python floats without .pt; assert the upstream scenario multiples directly, retaining typed AttributeError checks for null and point conversion for EMU lengths"
+    ]
+  ],
+  "test/features/steps/chart.ts": [
+    [
+      "import { Legend } from \"../../../src/chart/chart.js\";",
+      "import { Legend } from \"../../../src/chart/legend.js\";",
+      "pptx.chart.chart re-exports Legend only because it imports it; the port's chart module doesn't"
+    ]
   ]
 }

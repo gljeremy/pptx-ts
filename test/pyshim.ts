@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { ElementProxy } from "../src/shared.js";
 import { XmlElement } from "../src/oxml/xml.js";
 import { Length, pyFloatStr, pyReprStr } from "../src/util.js";
+import { AttributeError } from "../src/errors.js";
 import { createHash } from "node:crypto";
 import nodePath from "node:path";
 import { unzipSync } from "fflate";
@@ -15,6 +16,7 @@ import { ANY, _Call, camel, CallList, isMock, KW, setModules, setPyEq, setShow, 
 import * as utilMod from "../src/util.js";
 export * from "./mock.js";
 export { BytesIO };
+export { pyEval as $pyEval } from "./features/pyeval.js";
 
 const GETITEM = Symbol.for("py.getitem");
 const LEN = Symbol.for("py.len");
@@ -454,7 +456,7 @@ export function $getattr(o: any, name: string, ...dflt: any[]): any {
     }
   }
   if (dflt.length) return dflt[0];
-  throw new TypeError(`AttributeError: '${o?.constructor?.name}' object has no attribute '${name}'`);
+  throw new AttributeError(`'${o?.constructor?.name}' object has no attribute '${name}'`);
 }
 
 export function $setattr(o: any, name: string, v: any): void {
@@ -544,6 +546,13 @@ export function $next(it: Iterator<any>, ...dflt: any[]): any {
   return r.value;
 }
 
+/** python `type(v).__name__` for the builtin types whose JS names differ */
+export function $typename(v: any): string {
+  if (typeof v === "string") return "str";
+  if (typeof v === "boolean") return "bool";
+  if (v === null || v === undefined) return "NoneType";
+  return $type(v).name;
+}
 export const $type = (v: any) => (v === null || v === undefined ? null : Object.getPrototypeOf(Object(v)).constructor);
 
 /** itertools.product */
@@ -755,15 +764,23 @@ export const $path = {
     const e = nodePath.extname(p);
     return [p.slice(0, p.length - e.length), e];
   },
-  exists: (p: string) => {
-    try {
-      (globalThis as any).process.getBuiltinModule("node:fs").statSync(p);
-      return true;
-    } catch {
-      return false;
-    }
-  },
+  exists: (p: string) => statOrNull(p) !== null,
+  isfile: (p: string) => statOrNull(p)?.isFile() === true,
+  isdir: (p: string) => statOrNull(p)?.isDirectory() === true,
+  getsize: (p: string) => nodeFs().statSync(p).size,
 };
+
+const nodeFs = () => (globalThis as any).process.getBuiltinModule("node:fs");
+function statOrNull(p: string): any {
+  try {
+    return nodeFs().statSync(p);
+  } catch {
+    return null;
+  }
+}
+
+/** the `os` functions the tests use (os.path is $path) */
+export const $os = { remove: (p: string) => nodeFs().unlinkSync(p), path: $path };
 
 export const $sys = { maxsize: Number.MAX_SAFE_INTEGER, version_info: [3, 12, 0] };
 
@@ -775,7 +792,9 @@ export function $open(file: string, mode = "r"): any {
   const fs = (globalThis as any).process.getBuiltinModule("node:fs");
   if (mode.includes("w")) {
     const b = new BytesIO();
+    // like a python file, the bytes reach the disk on close(), which leaving `with` calls
     (b as any).close = () => fs.writeFileSync(file, b.getvalue());
+    (b as any).__exit__ = () => (b as any).close();
     return b;
   }
   const bytes = new Uint8Array(fs.readFileSync(file));
@@ -897,10 +916,10 @@ export const $newm = $call;
 
 /** python method call `obj.name(*args, **kwargs)` */
 export function $m(obj: any, name: string, ...args: any[]): any {
-  if (obj === null || obj === undefined) throw new TypeError(`'NoneType' object has no attribute '${name}'`);
+  if (obj === null || obj === undefined) throw new AttributeError(`'NoneType' object has no attribute '${name}'`);
   const fn = obj[name];
   if (isMock(fn)) return fn(...args);
-  if (typeof fn !== "function") throw new TypeError(`AttributeError: '${obj?.constructor?.name}' object has no attribute '${name}'`);
+  if (typeof fn !== "function") throw new AttributeError(`'${obj?.constructor?.name}' object has no attribute '${name}'`);
   if (fn.__pyPassKw) return fn.apply(obj, args);
   return fn.apply(obj, bindKw(fn, args));
 }
@@ -963,7 +982,7 @@ const isArr = Array.isArray;
 const isS = (o: any) => typeof o === "string" || o instanceof String;
 const callOwn = (o: any, name: string, args: any[]) => {
   const fn = o?.[name];
-  if (typeof fn !== "function") throw new TypeError(`AttributeError: '${o?.constructor?.name}' object has no attribute '${name}'`);
+  if (typeof fn !== "function") throw new AttributeError(`'${o?.constructor?.name}' object has no attribute '${name}'`);
   return isMock(fn) ? fn(...args) : fn.apply(o, bindKw(fn, args));
 };
 
@@ -1097,7 +1116,7 @@ export const $datetime = {
       t.setUTCFullYear(y);
       return t;
     },
-    { now: (_tz?: any) => new PyDatetime(Date.now()) },
+    { now: (_tz?: any) => new PyDatetime(Date.now()), utcnow: () => new PyDatetime(Date.now()) },
   ),
   timedelta: (kw: any = {}) => {
     const o = kw?.kwargs ?? kw;

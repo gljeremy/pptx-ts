@@ -1,7 +1,8 @@
 // The OLE icons live outside the main entry (src/templates/icons.ts, `pptx-ts/ole-icons`); in
 // Node they are read from templates/ when not registered. Both must give the files' bytes.
 import { readFileSync } from "node:fs";
-import { expect, it } from "vitest";
+import { expect, it, vi } from "vitest";
+import * as fileio from "../src/fileio.js";
 import { base64Decode, templateBytes } from "../src/templates/index.js";
 import { ICONS } from "../src/templates/icons.js";
 import { BINARY } from "../src/templates/data.js";
@@ -19,10 +20,15 @@ it("reads an unregistered OLE icon from the package's templates/ in Node", () =>
 });
 
 it("serves the icons pptx-ts/ole-icons registers", async () => {
-  await import("../src/ole-icons.js");
-  for (const name of icons) {
-    expect(base64Decode(ICONS[name])).toEqual(file(name));
-    expect(templateBytes(name)).toEqual(file(name));
+  const fs = vi.spyOn(fileio, "nodeFs").mockReturnValue(null);
+  try {
+    await import("../src/ole-icons.js");
+    for (const name of icons) {
+      expect(base64Decode(ICONS[name])).toEqual(file(name));
+      expect(templateBytes(name)).toEqual(file(name));
+    }
+  } finally {
+    fs.mockRestore();
   }
 });
 

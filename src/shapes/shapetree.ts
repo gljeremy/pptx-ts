@@ -993,6 +993,7 @@ export class _OleObjectElementCreator {
   /** Newly-created `p:graphicFrame` element referencing embedded OLE-object. */
   get _graphicFrame(): CT_GraphicalObjectFrame {
     return lazy(this, "_graphicFrame", () => {
+      this._iconImageFile;
       return CT_GraphicalObjectFrame.newOleObjectGraphicFrame(this._shapeId, this._shapeName, this._oleObjectRId, this._progId, this._iconRId, this._x, this._y, this._cx, this._cy, this._iconWidth, this._iconHeight);
     });
   }

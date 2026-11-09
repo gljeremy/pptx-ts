@@ -2,11 +2,12 @@
 // TypeScript), checked part by part against python-pptx's output for the same steps
 // (test/fixtures/quickstart, written by scripts/quickstart_golden.py).
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import { expect, it } from "vitest";
 import { unzipSync } from "fflate";
 import { BytesIO, Inches, MSO_SHAPE, Presentation, Pt } from "../src/index.js";
 
-const imgPath = new URL("./features/test_files/monty-truth.png", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
+const imgPath = fileURLToPath(new URL("./features/test_files/monty-truth.png", import.meta.url));
 
 const examples: Record<string, () => ReturnType<typeof Presentation>> = {
   hello_world() {
@@ -129,7 +130,7 @@ for (const [name, build] of Object.entries(examples)) {
 }
 
 it("extracts all text from slides in a presentation", () => {
-  const prs = Presentation(new URL("./features/test_files/txt-text.pptx", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1"));
+  const prs = Presentation(fileURLToPath(new URL("./features/test_files/txt-text.pptx", import.meta.url)));
   // textRuns will be populated with a list of strings, one for each text run in the presentation
   const textRuns: string[] = [];
   for (const slide of prs.slides) {

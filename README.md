@@ -12,8 +12,12 @@ creates, with their embedded Excel workbooks. Upstream's unit tests and all 973 
 acceptance scenarios pass. It runs in browsers as well as Node ([demo](demo/index.html)). See
 [PARITY.md](PARITY.md) for cross-check results and known output differences.
 
+```sh
+npm install @gljeremy/pptx-ts
+```
+
 ```ts
-import { Presentation, BytesIO } from "pptx-ts";
+import { Presentation, BytesIO } from "@gljeremy/pptx-ts";
 
 const prs = Presentation();                        // or Presentation(bytes | path | file-like)
 const slide = prs.slides.addSlide(prs.slideLayouts.at(0));
@@ -31,7 +35,7 @@ const bytes = out.getvalue();                      // Uint8Array, e.g. for a dow
 Charts take the same chart data objects as python-pptx:
 
 ```ts
-import { CategoryChartData, XL_CHART_TYPE, XL_LEGEND_POSITION, Inches } from "pptx-ts";
+import { CategoryChartData, XL_CHART_TYPE, XL_LEGEND_POSITION, Inches } from "@gljeremy/pptx-ts";
 
 const data = new CategoryChartData();
 data.categories = ["East", "West", "Midwest"];
@@ -54,7 +58,7 @@ same steps (`test/quickstart.test.ts`).
 ### Hello World!
 
 ```ts
-import { Presentation } from "pptx-ts";
+import { Presentation } from "@gljeremy/pptx-ts";
 
 const prs = Presentation();
 const titleSlideLayout = prs.slideLayouts.at(0);
@@ -98,7 +102,7 @@ vertical tab (`\v`) in the assigned string.
 ### `addTextbox()`
 
 ```ts
-import { Presentation, Inches, Pt } from "pptx-ts";
+import { Presentation, Inches, Pt } from "@gljeremy/pptx-ts";
 
 const prs = Presentation();
 const slide = prs.slides.addSlide(prs.slideLayouts.at(6)); // blank layout
@@ -133,7 +137,7 @@ prs.save("test.pptx");
 ### `addShape()`
 
 ```ts
-import { Presentation, Inches, MSO_SHAPE } from "pptx-ts";
+import { Presentation, Inches, MSO_SHAPE } from "@gljeremy/pptx-ts";
 
 const prs = Presentation();
 const slide = prs.slides.addSlide(prs.slideLayouts.at(5)); // title only
@@ -222,7 +226,7 @@ minified, 130 KB gzipped. `addOleObject()` without an icon file uses python-pptx
 icons, which are kept out of that bundle (about 260 KB). In the browser, load them first:
 
 ```ts
-import "pptx-ts/ole-icons";                 // or: await import("pptx-ts/ole-icons") when needed
+import "@gljeremy/pptx-ts/ole-icons";                 // or: await import("@gljeremy/pptx-ts/ole-icons") when needed
 slide.shapes.addOleObject(xlsxBytes, PROG_ID.XLSX, Inches(1), Inches(1));
 ```
 
@@ -234,7 +238,7 @@ no import.
 
 | python-pptx | pptx-ts |
 | --- | --- |
-| `from pptx import Presentation` | `import { Presentation } from "pptx-ts"` |
+| `from pptx import Presentation` | `import { Presentation } from "@gljeremy/pptx-ts"` |
 | `prs.slide_layouts[6]`, `prs.slides[-1]` | `prs.slideLayouts.at(6)`, `prs.slides.at(-1)` |
 | `len(prs.slides)`, `for s in prs.slides` | `prs.slides.length`, `for (const s of prs.slides)` |
 | `slide.placeholders[1]` (looked up by idx) | `slide.placeholders.get(1)` |

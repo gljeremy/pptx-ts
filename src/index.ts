@@ -1,6 +1,6 @@
 // pptx-ts: a TypeScript port of python-pptx.
 //
-//   import { Presentation, Inches } from "pptx-ts";
+//   import { Presentation, Inches } from "@gljeremy/pptx-ts";
 //   const prs = Presentation();
 //   const slide = prs.slides.addSlide(prs.slideLayouts.at(1));
 //   slide.shapes.title!.textFrame.text = "Hello";

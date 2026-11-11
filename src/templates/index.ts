@@ -1,7 +1,7 @@
 // Access to the files bundled from python-pptx's pptx/templates (see data.ts).
 //
 // The OLE object icons (*.emf) are not in data.ts, to keep them out of browser bundles that don't
-// embed OLE objects. `import "pptx-ts/ole-icons"` registers them; in Node they are read from the
+// embed OLE objects. `import "@gljeremy/pptx-ts/ole-icons"` registers them; in Node they are read from the
 // package's templates/ directory when not registered, so `addOleObject()` works there as is.
 import { KeyError } from "../errors.js";
 import { nodeFs } from "../fileio.js";
@@ -29,7 +29,7 @@ export function templateBytes(filename: string): Uint8Array {
     const bytes = readPackageTemplate(filename);
     if (bytes) return bytes;
     throw new KeyError(
-      `the OLE object icon '${filename}' is not loaded: \`import "pptx-ts/ole-icons"\` once before ` +
+      `the OLE object icon '${filename}' is not loaded: \`import "@gljeremy/pptx-ts/ole-icons"\` once before ` +
         "addOleObject(), or pass an icon file",
     );
   }

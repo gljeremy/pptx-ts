@@ -1,6 +1,6 @@
 // Generate src/templates/data.ts and src/templates/icons.ts from the files in templates/
 // (python-pptx's pptx/templates): XML templates as strings, binaries as base64. The OLE icons
-// (*.emf, about 360 KB of base64) go to icons.ts, which only the `pptx-ts/ole-icons` entry
+// (*.emf, about 360 KB of base64) go to icons.ts, which only the `@gljeremy/pptx-ts/ole-icons` entry
 // imports, so browser bundles don't carry them unless they embed OLE objects.
 // Usage: node scripts/gen_templates.mjs
 import fs from "node:fs";

@@ -1,6 +1,6 @@
 // Bundle the built package for the browser, as an app would, and check it: the main entry must
 // bundle without Node-only imports, stay under a size budget, leave the OLE icons out (they come
-// with `pptx-ts/ole-icons`) and still work: the bundled code opens a deck with a chart, reads it
+// with `@gljeremy/pptx-ts/ole-icons`) and still work: the bundled code opens a deck with a chart, reads it
 // and saves it. (A bundler drops modules it thinks are unused; the element classes register
 // themselves on import, so the package must not claim to be free of side effects.)
 // Usage: npm run build && node scripts/check_bundle.mjs
@@ -77,8 +77,8 @@ export async function exerciseOle(payload, customIcon) {
     }),
   };
 }`);
-console.log(`pptx-ts              ${kb(main.bytes)} minified, ${kb(main.gzip)} gzip (budget ${kb(BUDGET_GZIP)})`);
-console.log(`+ pptx-ts/ole-icons  ${kb(ole.bytes)} minified, ${kb(ole.gzip)} gzip`);
+console.log(`@gljeremy/pptx-ts              ${kb(main.bytes)} minified, ${kb(main.gzip)} gzip (budget ${kb(BUDGET_GZIP)})`);
+console.log(`+ @gljeremy/pptx-ts/ole-icons  ${kb(ole.bytes)} minified, ${kb(ole.gzip)} gzip`);
 
 let failed = false;
 const fail = (msg) => {
@@ -116,7 +116,7 @@ const checkEmbedded = (bytes, expectedIcon) => {
 };
 for (const [i, c] of result.cases.entries()) {
   assert.equal(c.error?.name, "KeyError");
-  assert.match(c.error.message, /import "pptx-ts\/ole-icons"/);
+  assert.match(c.error.message, /import "@gljeremy\/pptx-ts\/ole-icons"/);
   assert.deepEqual(entries(c.afterFailure), entries(c.before), "missing-icon failure leaves every ZIP entry unchanged");
   assert.equal(c.count, 1);
   assert.equal(c.progId, progIds[i % 4]);

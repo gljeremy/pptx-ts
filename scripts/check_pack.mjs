@@ -26,7 +26,7 @@ try {
   );
   writeFileSync(
     path.join(dir, "main.js"),
-    `import { Presentation, BytesIO } from "pptx-ts";
+    `import { Presentation, BytesIO } from "@gljeremy/pptx-ts";
 document.getElementById("file").addEventListener("change", async (e) => {
   const prs = Presentation(new Uint8Array(await e.target.files[0].arrayBuffer()));
   prs.slides.addSlide(prs.slideLayouts.at(0));
@@ -34,7 +34,7 @@ document.getElementById("file").addEventListener("change", async (e) => {
   prs.save(out);
   document.getElementById("status").textContent = String(out.getvalue().length);
 });
-window.ole = () => import("pptx-ts/ole-icons");
+window.ole = () => import("@gljeremy/pptx-ts/ole-icons");
 `,
   );
   sh(`npm install --no-audit --no-fund --loglevel=error ./${tgz} vite@5.4.11`);
@@ -49,7 +49,7 @@ window.ole = () => import("pptx-ts/ole-icons");
   writeFileSync(
     path.join(dir, "node-check.mjs"),
     `import { readFileSync } from "node:fs";
-import { BytesIO, Presentation, PROG_ID } from "pptx-ts";
+import { BytesIO, Presentation, PROG_ID } from "@gljeremy/pptx-ts";
 const prs = Presentation(new Uint8Array(readFileSync("public/sample.pptx")));
 const charts = [...prs.slides].flatMap((s) => [...s.shapes]).filter((sh) => sh.hasChart).length;
 const slide = prs.slides.addSlide(prs.slideLayouts.at(0));
@@ -58,7 +58,7 @@ const out = new BytesIO();
 prs.save(out);
 const re = Presentation(out.getvalue());
 const ole = [...re.slides.at(-1).shapes][0];
-await import("pptx-ts/ole-icons");
+await import("@gljeremy/pptx-ts/ole-icons");
 if (charts !== 4 || re.slides.length !== 3 || ole.oleFormat.progId !== "Excel.Sheet.12") throw new Error("unexpected result");
 console.log("node: opened 4 charts, added an OLE object, saved and reopened");
 `,

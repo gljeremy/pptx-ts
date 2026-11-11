@@ -1,5 +1,5 @@
 {
-  "name": "pptx-ts",
+  "name": "@gljeremy/pptx-ts",
   "version": "0.1.0",
   "description": "TypeScript port of python-pptx: create, read and update PowerPoint (.pptx) files in browsers and Node",
   "license": "MIT",
@@ -41,5 +41,22 @@
   },
   "engines": {
     "node": ">=20.16"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gljeremy/pptx-ts.git"
+  },
+  "homepage": "https://github.com/gljeremy/pptx-ts#readme",
+  "bugs": "https://github.com/gljeremy/pptx-ts/issues",
+  "keywords": [
+    "pptx",
+    "powerpoint",
+    "python-pptx",
+    "office",
+    "openxml",
+    "presentation"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }
